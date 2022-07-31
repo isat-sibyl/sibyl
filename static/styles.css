@@ -1,0 +1,30 @@
+body, html {
+	margin: 0;
+	font-family: sans-serif;
+}
+
+header, main, section, footer {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+header>*, 
+section>*, 
+footer>* {
+	max-width: 1440px;
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+}
+
+a.button {
+	background-color: #2E3192;
+	padding: 20px;
+	color: white;
+	font-weight: bold;
+}
