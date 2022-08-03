@@ -1,5 +1,7 @@
 from datetime import date
-from gzip import READ
+import sys
+from css_html_js_minify import minify
+
 import json
 import re
 import time
@@ -299,3 +301,7 @@ class Parser:
 
 if __name__ == '__main__':
 	Parser().build()
+	sys._argv = sys.argv[:]
+	sys.argv=['', '--quiet', '--overwrite', 'dist/']
+	minify.main()
+	sys.argv = sys._argv
