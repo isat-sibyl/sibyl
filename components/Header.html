@@ -1,0 +1,45 @@
+<template>
+	<header class="row">
+		<div class="row sb fw" style="padding: 10px;">
+			<a href="{{ROOT}}" class="row vca gutter-lg">
+				<img src="/logo-white.svg" alt="" height="60" width="60">
+				<h1 style="margin: 0; display: block;">{{ siteName }}</h1>
+			</a>
+			<nav class="row vca" style="gap: 20px;">
+				<For each="route in routes">
+					<a href="{{ROOT}}{{route.path}}" style="padding: 10px;">
+						{{route.name}}
+					</a>
+				</For>
+				<For each="locale in OTHER_LOCALES">
+					<a href="{{locale.path}}{{PAGE}}" style="padding: 10px; text-transform: uppercase; border: 2px solid white">
+						{{locale.name}}
+					</a>
+				</For>
+			</nav>
+		</div>
+	</header>
+</template>
+
+<style>
+	header {
+		height: 100px;
+		background-color: black;
+		box-shadow: 0 4px 4px rgba(0, 0, 0, 0.4);
+		color: white;
+	}
+
+	nav>* {
+		text-decoration: none;
+		color: white;
+		background-color: black;
+		transition: 0.3s;
+		height: fit-content;
+		font-weight: bold;
+	}
+
+	nav>*:hover {
+		background-color: white;
+		color: black;
+	}
+</style>

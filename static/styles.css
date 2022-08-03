@@ -11,20 +11,18 @@ header, main, section, footer {
 	align-items: center;
 }
 
+header, main, footer {
+	gap: 30px;
+}
+
 header>*, 
 section>*, 
 footer>* {
 	max-width: 1440px;
+	flex-grow: 1;
 }
 
 a {
 	text-decoration: none;
 	color: inherit;
-}
-
-a.button {
-	background-color: #2E3192;
-	padding: 20px;
-	color: white;
-	font-weight: bold;
 }

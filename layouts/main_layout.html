@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="{{ LOCALE }}">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{{siteName}}</title>
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#333333">
+	<meta name="msapplication-TileColor" content="#2b5797">
+	<meta name="theme-color" content="#ffffff">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="stylesheet" href="/flex.css">
+	<style>
+		.preload * {
+			-webkit-transition: none !important;
+			-moz-transition: none !important;
+			-ms-transition: none !important;
+			-o-transition: none !important;
+			transition: none !important;
+		}
+	</style>
+	<Slot name="Styles"></Slot>
+</head>
+<body class="preload" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between;">
+	<Slot name="Header">
+		<Component name="Header" />
+	</Slot>
+
+	<main style="padding: 20px 10px 50px 10px;">
+		<Slot name="Content"></Slot>
+	</main>
+
+	<Slot name="Footer">
+		<Component name="Footer"/>
+	</Slot>
+
+	<Slot name="Scripts"></Slot>
+	<script defer>
+		window.onload = function() {document.body.classList.remove("preload");};
+	</script>
+</body>
+</html>
