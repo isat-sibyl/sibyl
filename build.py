@@ -253,7 +253,7 @@ class Parser:
 					file = open(f"{settings.BUILD_PATH}/{settings.COMPONENTS_PATH}/{component.split('.')[0]}.js", "w")
 					file.write(script.text)
 
-	def build(self):
+	def build(self): #NOSONAR
 		start_time = time.time()
 
 		# Prepare build directory
