@@ -201,7 +201,7 @@ class Parser:
 
 			file.seek(0) # move to the beginning of the file
 			file.truncate(0) # clear file
-			file.write(self.replace_var(soup.prettify())) # write the result with replaced variables and pretiffied
+			file.write(self.replace_var(str(soup))) # write the result with replaced variables and pretiffied
 		os.remove(build_path + "index.html.temp") # clean temp file
 	
 	def build_pages(self, path):
