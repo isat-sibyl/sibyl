@@ -1,5 +1,6 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import sys
+from time import sleep
 from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEventHandler
 import settings
@@ -20,10 +21,10 @@ def try_build():
 	try:
 		build.Parser().build()
 	except Exception as e:
-		print(bcolors.WARNING +"[ERROR] Failed to rebuild", file=sys.stderr)
+		print(bcolors.FAIL +"[ERROR] Failed to rebuild", file=sys.stderr)
 		print(str(e) + bcolors.ENDC, file=sys.stderr)
 	else:
-		print("[INFO] Successfully rebuilt")
+		print(bcolors.OKGREEN + "[INFO] Successfully rebuilt" + bcolors.ENDC)
 
 class Handler(FileSystemEventHandler):
 	def on_modified(self, event):
@@ -31,30 +32,32 @@ class Handler(FileSystemEventHandler):
 			print("[INFO] File " + event.src_path + " has been modified, rebuilding...")
 			try_build()
 
-class RequestHandler(SimpleHTTPRequestHandler):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, directory=settings.BUILD_PATH, **kwargs)
+# class RequestHandler(SimpleHTTPRequestHandler):
+# 	def __init__(self, *args, **kwargs):
+# 		super().__init__(*args, directory=settings.BUILD_PATH, **kwargs)
 
-	def end_headers(self):
-		self.send_my_headers()
-		SimpleHTTPRequestHandler.end_headers(self)
+# 	def end_headers(self):
+# 		self.send_my_headers()
+# 		SimpleHTTPRequestHandler.end_headers(self)
 
-	def send_my_headers(self):
-		self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-		self.send_header("Pragma", "no-cache")
-		self.send_header("Expires", "0")
+# 	def send_my_headers(self):
+# 		self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+# 		self.send_header("Pragma", "no-cache")
+# 		self.send_header("Expires", "0")
 	
 if __name__ == '__main__':
-	print("[INFO] Server started on port " + str(settings.DEV_PORT))
-	server = HTTPServer(('localhost', settings.DEV_PORT), RequestHandler)
+	# print("[INFO] Server started on port " + str(settings.DEV_PORT))
+	# server = HTTPServer(('localhost', settings.DEV_PORT), RequestHandler)
 	observer = Observer()
 	observer.schedule(Handler(), ".", recursive=True) # watch the local directory
 	observer.start()
 	try_build()
 	try:
-		server.serve_forever()
+		# server.serve_forever()
+		while True:
+			sleep(1)
 	except KeyboardInterrupt:
 		print("Shutting down...")
-		server.shutdown()
+		# server.shutdown()
 		observer.stop()
 		observer.join()

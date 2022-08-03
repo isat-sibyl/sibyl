@@ -1,7 +1,9 @@
 """Build settings"""
 
-BASE_URL = '/'
+ROOT = '/'
 DEFAULT_LOCALE = 'en'
+
+MAX_COMPONENT_NESTING = 100
 
 COMPONENTS_PATH = 'components'
 LAYOUT_PATH = 'layouts'
