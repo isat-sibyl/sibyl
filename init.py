@@ -1,6 +1,12 @@
 import shutil
 
 if __name__ == '__main__':
-	copy = ['components', 'layouts', 'locales', 'pages', 'static', 'settings.py', 'requirements.txt', 'dev.bat', 'build.bat']
-	for to_copy in copy:
-		shutil.copytree("/sibyl/" + to_copy, "/" + to_copy)
+	folders = ['components', 'layouts', 'locales', 'pages', 'static']
+	files = ['settings.py', 'requirements.txt', 'dev.bat', 'build.bat']
+	for folder in folders:
+		shutil.copytree("sibyl/" + folder, folder, dirs_exist_ok=True)
+		
+	for file in files:
+		shutil.copy("sibyl/" + file, file)
+	
+	print("Init successful, you must now install dependencies.")
