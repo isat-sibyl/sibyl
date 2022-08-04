@@ -72,9 +72,9 @@
 }
 
 .row.vsa, .col.sa {
-	align-items: space-around;
+	align-content: space-around;
 }
 
 .row.vsb, .col.sb {
-	align-items: space-between;
+	align-content: space-between;
 }

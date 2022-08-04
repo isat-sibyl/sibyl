@@ -1,0 +1,46 @@
+<Settings layout="main_layout" />
+<Content>
+	<Component name="Dialog"></Component>
+	Getting started with Sibyl is easy.
+	<ol>
+		<li>
+			Clone the <a href="https://github.com/is-at/sibyl">Github Repo</a> (we recommend using it as a submodule)</li>
+		<li>Execute the init file: 
+			<code class="copiable" title="Click to copy">sibyl/init</code>
+		</li>
+		<li>
+			(Optional) Create a virtualenv: 
+			<code class="copiable" title="Click to copy">virtualenv .</code>
+		</li>
+		<li>
+			(Optional) Start your virtualenv: 
+			<code class="copiable" title="Click to copy">Scripts\activate</code>
+		</li>
+		<li>
+			Start the dev server:
+			<code class="copiable" title="Click to copy">dev</code>
+		</li>
+		<li>
+			Build:
+			<code class="copiable" title="Click to copy">build</code>
+		</li>
+	</ol>
+	
+</Content>
+
+<style>
+	.copiable {
+		cursor: pointer;
+	}
+</style>
+
+<script>
+	function copyContentsToClipboard(event) {
+		navigator.clipboard.writeText(event.srcElement.innerHTML);
+		showDialog("Content copied to clipboard")
+	}
+	const copiableElements = document.getElementsByClassName("copiable");
+	for (const copiable of copiableElements) {
+		copiable.addEventListener("click", copyContentsToClipboard);
+	}
+</script>

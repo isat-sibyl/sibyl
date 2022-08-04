@@ -1,0 +1,46 @@
+<template>
+	
+	<div class="row ca fw" style="height: 0">
+		<div class="dialog" onclick="hideDialog()">
+			{{message | Success}}
+		</div>
+	</div>
+</template>
+
+<style>
+	.dialog {
+		padding: 15px;
+		background-color: green;
+		color: white;
+		border-radius: 10px;
+		position: fixed;
+		bottom: 0px;
+		transform: translateY(100px);
+		box-shadow: 1px 4px 4px rgba(0, 0, 0, 0.3);
+		transition: 1s;
+		cursor: pointer;
+	}
+
+	.dialog.active {
+		transform: translateY(-20px);
+	}
+</style>
+
+<script>
+	const event = new Event('triggerDialog');
+
+	function hideDialog() {
+		for (const dialog of dialogs) {
+			dialog.classList = "dialog";
+		}
+	}
+
+	function showDialog(message) {
+		dialogs = document.getElementsByClassName("dialog");
+		for (const dialog of dialogs) {
+			dialog.classList += " active";
+			dialog.innerHTML = message;
+		}
+		new Promise(r => setTimeout(r, 4000)).then(hide);
+	}
+</script>

@@ -3,6 +3,10 @@
 		{
 			"name" : "Home",
 			"path" : ""
+		},
+		{
+			"name" : "Começar",
+			"path" : "start"
 		}
 	],
 
