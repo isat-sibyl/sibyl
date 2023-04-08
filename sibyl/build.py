@@ -178,10 +178,10 @@ class Parser:
 		self.context = old_context
 		self.component_depth -= 1
 
-		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], self.settings['COMPONENTS_PATH'], tag["name"] + ".css")):
-			required_styles.add(Tag(name="link", attrs={"rel": "stylesheet", "href": "/" + self.settings['COMPONENTS_PATH'] + "/" + tag["name"] + ".css"}, can_be_empty_element=True))
-		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], self.settings['COMPONENTS_PATH'], tag["name"] + ".js")):
-			required_scripts.add(Tag(name="script", attrs={"src": "/" + self.settings['COMPONENTS_PATH'] + "/" + tag["name"] + ".js", "defer" : True}))
+		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], 'components', tag["name"] + ".css")):
+			required_styles.add(Tag(name="link", attrs={"rel": "stylesheet", "href": "/" + 'components' + "/" + tag["name"] + ".css"}, can_be_empty_element=True))
+		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], 'components', tag["name"] + ".js")):
+			required_scripts.add(Tag(name="script", attrs={"src": "/" + 'components' + "/" + tag["name"] + ".js", "defer" : True}))
 		
 		self.context["LOCATION"].pop()
 
@@ -348,13 +348,13 @@ class Parser:
 				# Build style
 				style = soup.find("style")
 				if style is not None:
-					style_file = open(f"{self.settings['BUILD_PATH']}/{self.settings['COMPONENTS_PATH']}/{component.split('.')[0]}.css", "w", encoding = 'utf-8')
+					style_file = open(os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.css"), "w", encoding = 'utf-8')
 					style_file.write(style.text)
 
 				# Build script
 				script = soup.find("script")
 				if script is not None:
-					js_file = open(f"{self.settings['BUILD_PATH']}/{self.settings['COMPONENTS_PATH']}/{component.split('.')[0]}.js", "w", encoding = 'utf-8')
+					js_file = open(os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.js"), "w", encoding = 'utf-8')
 					js_file.write(script.text)
 	
 	def add_global_context_values(self, global_context):
@@ -374,7 +374,7 @@ class Parser:
 		"""Initialize the locale context."""
 		self.locale = locale_file.split(".", 1)[0]
 		self.base_path = "" if self.locale == self.settings["DEFAULT_LOCALE"] else self.locale
-		self.context = {**global_context, **json.load(open(f"{self.settings['LOCALES_PATH']}/{locale_file}", encoding = 'utf-8'))}
+		self.context = {**global_context, **json.load(open(os.path.join(self.settings['LOCALES_PATH'], locale_file), encoding = 'utf-8'))}
 		self.context["LOCALE"] = self.locale
 		self.context["LOCATION"] = [self.locale]
 
