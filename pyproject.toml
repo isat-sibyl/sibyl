@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "isat-sibyl"
+name = "sibyl"
 version = "0.0.1"
 authors = [
   { name="Pedro Cavalheiro", email="pedro.cavalheiro@isat.pt" },
