@@ -17,7 +17,16 @@ var_pattern = re.compile(r"{{\s*([^\s{}]+)\s*(\|\s*(\S+)\s*)?}}")
 def load_settings():
 	"""Load the settings from settings.yaml."""
 	with open("settings.yaml", "r", encoding="utf-8") as file:
-		return yaml.safe_load(file)
+		result = yaml.safe_load(file)
+		for key, value in result.items():
+			if isinstance(value, str):
+				result[key] = value.replace("SIBYL_PATH", os.path.dirname(__file__))
+			elif isinstance(value, list):
+				for i in range(len(value)):
+					if isinstance(value[i], str):
+						value[i] = value[i].replace("SIBYL_PATH", os.path.dirname(__file__))
+						
+		return result
 
 class Parser:
 	def get_debug_location(self):

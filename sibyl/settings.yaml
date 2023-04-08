@@ -5,10 +5,10 @@ OPEN_BROWSER: False
 MAX_COMPONENT_NESTING: 100
 COMPONENTS_PATH: 
   - "components"
-  - "sibyl/components"
+  - "SIBYL_PATH/components"
 LAYOUT_PATH:
   - "layouts"
-  - "sibyl/layouts"
+  - "SIBYL_PATH/layouts"
   
 PAGES_PATH: "pages"
 BUILD_PATH: "dist"
