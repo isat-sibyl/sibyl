@@ -107,7 +107,7 @@ class Parser:
 		# ensure that the component exists
 		for path in self.settings["COMPONENTS_PATH"]:
 			if os.path.isfile(os.path.join(path, name + ".html")):
-				return os.path.dirname(path)
+				return path
 		raise ParseError("Component " + name + " not found. At " + self.get_debug_location())
 	
 	def process_attrs(self, tag : Tag, first_child : Tag):
@@ -178,10 +178,10 @@ class Parser:
 		self.context = old_context
 		self.component_depth -= 1
 
-		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], path, tag["name"] + ".css")):
-			required_styles.add(Tag(name="link", attrs={"rel": "stylesheet", "href": "/" + path + "/" + tag["name"] + ".css"}, can_be_empty_element=True))
-		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], path, tag["name"] + ".js")):
-			required_scripts.add(Tag(name="script", attrs={"src": "/" + path + "/" + tag["name"] + ".js", "defer" : True}))
+		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], self.settings['COMPONENTS_PATH'], tag["name"] + ".css")):
+			required_styles.add(Tag(name="link", attrs={"rel": "stylesheet", "href": "/" + self.settings['COMPONENTS_PATH'] + "/" + tag["name"] + ".css"}, can_be_empty_element=True))
+		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], self.settings['COMPONENTS_PATH'], tag["name"] + ".js")):
+			required_scripts.add(Tag(name="script", attrs={"src": "/" + self.settings['COMPONENTS_PATH'] + "/" + tag["name"] + ".js", "defer" : True}))
 		
 		self.context["LOCATION"].pop()
 
@@ -348,13 +348,13 @@ class Parser:
 				# Build style
 				style = soup.find("style")
 				if style is not None:
-					style_file = open(f"{self.settings['BUILD_PATH']}/{os.path.dirname(path)}/{component.split('.')[0]}.css", "w", encoding = 'utf-8')
+					style_file = open(f"{self.settings['BUILD_PATH']}/{self.settings['COMPONENTS_PATH']}/{component.split('.')[0]}.css", "w", encoding = 'utf-8')
 					style_file.write(style.text)
 
 				# Build script
 				script = soup.find("script")
 				if script is not None:
-					js_file = open(f"{self.settings['BUILD_PATH']}/{os.path.dirname(path)}/{component.split('.')[0]}.js", "w", encoding = 'utf-8')
+					js_file = open(f"{self.settings['BUILD_PATH']}/{self.settings['COMPONENTS_PATH']}/{component.split('.')[0]}.js", "w", encoding = 'utf-8')
 					js_file.write(script.text)
 	
 	def add_global_context_values(self, global_context):
