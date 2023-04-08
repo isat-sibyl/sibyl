@@ -25,7 +25,7 @@ def load_settings():
 				for i in range(len(value)):
 					if isinstance(value[i], str):
 						value[i] = value[i].replace("SIBYL_PATH", os.path.dirname(__file__))
-						
+
 		return result
 
 class Parser:
@@ -106,7 +106,7 @@ class Parser:
 	def get_component_path(self, name):
 		# ensure that the component exists
 		for path in self.settings["COMPONENTS_PATH"]:
-			if os.path.isfile(path + "/" + name + ".html"):
+			if os.path.isfile(os.path.join(path, name + ".html")):
 				return path
 		raise ParseError("Component " + name + " not found. At " + self.get_debug_location())
 	
@@ -141,7 +141,7 @@ class Parser:
 		
 		path = self.get_component_path(tag["name"])
 		
-		component_soup = BeautifulSoup(open(path + "/" + tag["name"] + ".html", encoding = 'utf-8'), 'html.parser')
+		component_soup = BeautifulSoup(open(os.path.join(path, tag["name"] + ".html"), encoding = 'utf-8'), 'html.parser')
 		first_child = component_soup.find("template").find()
 
 		required_styles = set()
@@ -256,12 +256,12 @@ class Parser:
 			raise ParseError("No Settings tag found in " + build_path)
 
 		for path in self.settings["LAYOUT_PATH"]:
-			if os.path.exists(path + "/" + page_settings['layout'] + ".html"):
+			if os.path.exists(os.path.join(path, page_settings['layout'] + ".html")):
 				break
 		else:
 			raise ParseError("Layout " + page_settings['layout'] + " not found")
 		
-		shutil.copyfile(f"{path}/{page_settings['layout']}.html", build_path + "index.html") # copy the layout and use it as a base
+		shutil.copyfile(os.path.join(path, f"{page_settings['layout']}.html"), build_path + "index.html") # copy the layout and use it as a base
 		with open(build_path + "index.html", "r+", encoding = 'utf-8') as file:
 			soup = BeautifulSoup(file, 'html.parser')
 
@@ -338,7 +338,7 @@ class Parser:
 			if os.path.isdir(component):
 				self.build_components(path + component)
 			if component.endswith(".html"):
-				soup = BeautifulSoup(open(f"{path}/{component}", encoding = 'utf-8'), 'html.parser')
+				soup = BeautifulSoup(open(os.path.join(path, component), encoding = 'utf-8'), 'html.parser')
 
 				# Ensure component has a template
 				template = soup.find("template")
@@ -397,10 +397,10 @@ class Parser:
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/")
 
 		for path in self.settings["COMPONENTS_PATH"]:
-			os.makedirs(os.path.dirname(f"{self.settings['BUILD_PATH']}/{path}/"), exist_ok=True)
+			os.makedirs(os.path.dirname(os.path.join(self.settings['BUILD_PATH'], path), exist_ok=True))
 			self.build_components(path)
 
-		global_context = json.load(open(f"{self.settings['LOCALES_PATH']}/.global.json", encoding = 'utf-8'))
+		global_context = json.load(open(os.path.join(self.settings['LOCALES_PATH'], ".global.json")), encoding = 'utf-8')
 		self.add_global_context_values(global_context)
 		
 		locale_files = os.listdir(self.settings['LOCALES_PATH'])

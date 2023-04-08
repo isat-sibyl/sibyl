@@ -1,1 +1,1 @@
-python sibyl/dev.py
+python -m sibyl.dev

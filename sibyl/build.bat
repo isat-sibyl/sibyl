@@ -1,1 +1,1 @@
-python sibyl/build.py
+python -m sibyl.build
