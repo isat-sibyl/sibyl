@@ -1,0 +1,47 @@
+<template>
+	<a class="linkedin" href="{{linkedinUrl}}" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn"> 
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 75" xmlns:v="https://vecta.io/nano"><path d="M5.599 0C2.507 0 0 2.448 0 5.463v65.324c0 3.017 2.507 5.461 5.6 5.461h64.568c3.092 0 5.6-2.444 5.6-5.461V5.463c0-3.016-2.507-5.463-5.6-5.463zm11.723 12.799c3.915 0 6.324 2.571 6.398 5.949 0 3.304-2.484 5.949-6.475 5.949h-.074c-3.84 0-6.324-2.645-6.324-5.949 0-3.378 2.56-5.949 6.475-5.949zM51.058 28.59c7.529 0 13.174 4.921 13.174 15.496v19.742H52.789v-18.42c0-4.629-1.656-7.785-5.797-7.785-3.161 0-5.044 2.13-5.871 4.186-.302.736-.377 1.762-.377 2.791v19.229H29.301v-34.43h11.443v4.879c1.52-2.347 4.235-5.687 10.314-5.687zm-10.314 5.688c-.024.036-.053.077-.076.113h.076zm-29.221-4.879h11.445v34.43H11.523z"/></svg>
+	</a>
+	<a class="twitter" href="{{twitterUrl}}" target="_blank" rel="noreferrer noopener" aria-label="Twitter"> 
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 75" xmlns:v="https://vecta.io/nano"><path d="M5.599 0C2.507 0 0 2.448 0 5.463v65.324c0 3.017 2.507 5.461 5.6 5.461h64.568c3.092 0 5.6-2.444 5.6-5.461V5.463c0-3.016-2.507-5.463-5.6-5.463H5.599zm44.295 13.586c3.173.097 6.308 1.406 8.654 3.9 2.776-.547 5.437-1.567 7.871-3.01-.925 2.869-2.863 5.307-5.449 6.855a24.65 24.65 0 0 0 7.117-1.951c-1.664 2.493-3.759 4.665-6.184 6.42l.037 1.604c0 16.376-12.467 35.264-35.264 35.264v-.012c-6.734.01-13.329-1.918-18.998-5.555.979.118 1.963.175 2.949.178a24.88 24.88 0 0 0 15.393-5.314 12.41 12.41 0 0 1-11.578-8.607c1.858.358 3.772.285 5.596-.213-5.782-1.168-9.941-6.249-9.941-12.148v-.156c1.723.96 3.652 1.492 5.625 1.551-5.446-3.639-7.124-10.885-3.836-16.549A35.17 35.17 0 0 0 37.428 28.79a12.4 12.4 0 0 1 3.586-11.84c2.496-2.346 5.708-3.461 8.881-3.363z"/></svg>
+	</a>
+</template>
+
+<style>
+	.linkedin, .linkedin svg, .twitter, .twitter svg {
+		width: 32px;
+		height: 32px;
+		border-radius: 8px;
+	}
+	.linkedin path, .twitter path {
+		fill: #fff;
+		transition: 0.3s;
+	}
+
+	.linkedin, .twitter {
+		transition: 0.3s;
+		display: inline-block;
+		margin: 0 5px;
+		box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
+	}
+
+	.linkedin:hover, .twitter:hover {
+		background-color: #fff;
+	}
+
+	.linkedin:hover {
+		outline: 2px solid #0077b5;
+	}
+
+	.twitter:hover {
+		outline: 2px solid #1da1f2;
+	}
+
+	.linkedin:hover path {
+		fill: #0077b5;
+	}
+
+	.twitter:hover path {
+		fill: #1da1f2;
+	}
+</style>

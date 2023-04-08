@@ -1,0 +1,12 @@
+<script>
+	// https://www.bscotch.net/post/create-a-live-reload-server
+	(()=>{
+  const socketUrl = 'ws://localhost:8090';
+  let socket = new WebSocket(socketUrl);
+  socket.onmessage = (e) => {
+		if (e.data === 'reload') {
+			window.location.reload();
+		}
+	};
+})();
+</script>

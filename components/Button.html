@@ -1,5 +1,33 @@
 <template>
-	<a href="{{ROOT}}{{route}}" style="padding: 10px;">
-		{{routes.{{route}}.name}}
-	</a>
+	<a class="button shadow text-shadow" style="padding: 15px 40px;" href="{{href | {{ROOT}}{{page}}}}" rel="noreferrer noopener" target="_blank"><Slot>{{label}}</Slot></a>
 </template>
+
+<style>
+	.button {
+		font-size: 1.3em;
+		background-color: var(--accent-half);
+		color: #ededed;
+		text-decoration: none;
+		transition: 0.3s;
+		font-weight: bold;
+		text-align: center;
+	}
+
+	.button:hover {
+		color: white;
+		transform: scale(1.05);
+	}
+
+	.button.secondary {
+		background-color: var(--accent-half);
+	}
+
+	/* smaller font size under 375px */
+
+	@media screen and (max-width: 375px) {
+		.button {
+			padding: 15px 20px;
+			font-size: 4.5vw;
+		}
+	}
+</style>

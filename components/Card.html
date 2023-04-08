@@ -1,0 +1,28 @@
+<template>
+	<div class="card flex column">
+		<Slot></Slot>
+	</div>
+</template>
+
+<style>
+	.card {
+		width: 100%;
+		max-width: 300px;
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+		border-radius: 10px;
+		padding: 20px;
+		transition: 0.3s;
+		height: fit-content;
+		overflow: hidden;
+	}
+
+	.card>img:first-child {
+		width: calc(100% + 40px);
+		margin: -20px;
+		margin-bottom: 10px;
+	}
+	
+	.card:not(.no-hover):hover {
+		scale: 1.05;
+	}
+</style>

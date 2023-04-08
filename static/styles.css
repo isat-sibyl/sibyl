@@ -11,8 +11,12 @@ header, main, section, footer {
 	align-items: center;
 }
 
+section.row {
+	flex-direction: row;
+}
+
 header, main, footer {
-	gap: 30px;
+	gap: 20px;
 }
 
 header>*, 
@@ -25,4 +29,16 @@ footer>* {
 a {
 	text-decoration: none;
 	color: inherit;
+}
+
+.shadow {
+	box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.35);
+}
+
+.text-shadow {
+	text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.60);
+}
+
+.caption {
+	color: #ccc;
 }

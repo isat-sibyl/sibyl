@@ -1,63 +1,131 @@
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import sys
-from time import sleep
+import asyncio
+import os
+import traceback
+import logging
+import webbrowser
+from http.server import SimpleHTTPRequestHandler
+from threading import Thread
 from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEventHandler
-import settings
 import build
+import settings
+import socketserver
+import websockets
+from websockets.server import serve
+import signal
 
-class bcolors:
-	HEADER = '\033[95m'
-	OKBLUE = '\033[94m'
-	OKCYAN = '\033[96m'
-	OKGREEN = '\033[92m'
-	WARNING = '\033[93m'
-	FAIL = '\033[91m'
-	ENDC = '\033[0m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
+connected = set()
+
+logging.basicConfig(level=logging.INFO)
 
 def try_build():
+	"""Try to build the site, and log any errors."""
 	try:
-		build.Parser().build()
+		build.Parser().build(True)
 	except Exception as e:
-		print(bcolors.FAIL +"[ERROR] Failed to rebuild", file=sys.stderr)
-		print(str(e) + bcolors.ENDC, file=sys.stderr)
+		logging.error("Failed to rebuild")
+		logging.error(e)
+		traceback.print_exc()
 	else:
-		print(bcolors.OKGREEN + "[INFO] Successfully rebuilt" + bcolors.ENDC)
+		logging.info("Successfully rebuilt")
+
+async def send_reload_signal():
+	"""Send a reload signal to all connected clients."""
+	for client in connected:
+		await client.send("reload")
 
 class Handler(FileSystemEventHandler):
+	"""A watchdog event handler that rebuilds the site on file changes."""
 	def on_modified(self, event):
 		if event.src_path != "." and not event.src_path.startswith(".\\" + settings.BUILD_PATH) and not event.src_path.startswith(".\\Lib") and not event.src_path.startswith(".\\Script"):
-			print("[INFO] File " + event.src_path + " has been modified, rebuilding...")
+			logging.info("File " + event.src_path + " has been modified, rebuilding...")
 			try_build()
+			asyncio.run(send_reload_signal())
 
-# class RequestHandler(SimpleHTTPRequestHandler):
-# 	def __init__(self, *args, **kwargs):
-# 		super().__init__(*args, directory=settings.BUILD_PATH, **kwargs)
+class RequestHandler(SimpleHTTPRequestHandler):
+	"""A request handler that adds cache-control headers to all responses."""
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, directory=settings.BUILD_PATH, **kwargs)
 
-# 	def end_headers(self):
-# 		self.send_my_headers()
-# 		SimpleHTTPRequestHandler.end_headers(self)
+	def end_headers(self):
+		self.send_my_headers()
+		SimpleHTTPRequestHandler.end_headers(self)
 
-# 	def send_my_headers(self):
-# 		self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-# 		self.send_header("Pragma", "no-cache")
-# 		self.send_header("Expires", "0")
+	def send_my_headers(self):
+		self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+		self.send_header("Pragma", "no-cache")
+		self.send_header("Expires", "0")
+
+async def handler(websocket : websockets.WebSocketServerProtocol):
+	"""A websocket handler that sends a reload signal to all connected clients when a reload signal is received."""
+	connected.add(websocket)
 	
-if __name__ == '__main__':
-	# print("[INFO] Server started on port " + str(settings.DEV_PORT))
-	# server = HTTPServer(('localhost', settings.DEV_PORT), RequestHandler)
+	while True:
+		try:
+			message = await websocket.recv()
+			if message != "reload":
+				logging.error("Received invalid message: " + message)
+				continue
+		except websockets.exceptions.ConnectionClosed:
+			connected.remove(websocket)
+			break
+		else:
+			logging.info("Reload signal received, reloading all clients...")
+			# send a reload signal to all connected clients
+			for client in connected:
+				await client.send("reload") 
+
+async def run_ws_server(stop_event : asyncio.Event, stopped : asyncio.Event):
+	"""Run the websocket server."""
+	server = await serve(handler, "localhost", settings.WEBSOCKETS_PORT)
+	await stop_event.wait()
+	server.close()
+	await server.wait_closed()
+	stopped.set()
+
+async def main(terminate : asyncio.Event):
+	"""Start the web server, file watcher, and websocket server."""
+	stop_event = asyncio.Event()
+	stopped = asyncio.Event()
+	ws_server = asyncio.create_task(run_ws_server(stop_event, stopped))
+	logging.info("Serving websocket server at port " + str(settings.WEBSOCKETS_PORT) + "...")
+
 	observer = Observer()
 	observer.schedule(Handler(), ".", recursive=True) # watch the local directory
 	observer.start()
+	logging.info("Watching for file changes...")
 	try_build()
-	try:
-		# server.serve_forever()
-		while True:
-			sleep(1)
-	except KeyboardInterrupt:
-		print("Shutting down...")
-		# server.shutdown()
-		observer.stop()
-		observer.join()
+
+	httpd = socketserver.ThreadingTCPServer(("", settings.DEV_PORT), RequestHandler) 
+	logging.info("Serving files at port " + str(settings.DEV_PORT) + "...")
+	if settings.OPEN_BROWSER:
+		logging.info("Opening browser...")
+		webbrowser.open("http://localhost:" + str(settings.DEV_PORT) + "/")
+	static_server = Thread(target=httpd.serve_forever)
+	static_server.start()
+
+	await terminate.wait()
+	
+	logging.info("Shutting down web server...")
+	httpd.shutdown()
+	
+	logging.info("Shutting down observer...")
+	observer.stop()
+	
+	logging.info("Shutting down websocket server...")
+	stop_event.set()
+	static_server.join()
+	observer.join()
+	await	stopped.wait()
+	ws_server.cancel()
+	logging.info("All servers shut down.")
+	
+	loop = asyncio.get_event_loop()
+	loop.call_soon_threadsafe(loop.stop)
+	
+if __name__ == "__main__":
+	terminate = asyncio.Event()
+	for sig in (signal.SIGINT, signal.SIGTERM):
+		signal.signal(sig, lambda x, y: terminate.set())
+	asyncio.run(main(terminate))
+	os._exit(0) 

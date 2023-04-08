@@ -1,0 +1,24 @@
+<template>
+	<div class="skewed-title"">
+		<span>
+			<Slot></Slot>
+		</span>
+	</div>
+</template>
+
+<style>
+	.skewed-title {
+		width: 100%;
+		max-width: 100%;
+		position: relative;
+		z-index: 1;
+		display: flex;
+		justify-content: center;
+		transform: skewY(-1deg);
+		text-align: center;
+	}
+
+	.skewed-title span {
+		transform: skewY(1deg);
+	}
+</style>

@@ -1,0 +1,42 @@
+:root {
+	/* Identity */
+	--primary : #498462;
+	--secondary: #356549;
+	--accent: #fc8853;
+	--accent-faded: #fc885344;
+	--accent-half: #fc885399;
+	--accent-primary-transition: #6a6e4c;
+	--accent-secondary-transition: #313224;
+
+	/* Header */
+	--header-bg: black;
+	--header-logo-text-color: white;
+	--header-links: white;
+	--header-links-active: var(--primary);
+	--header-links-hover: var(--secondary);
+
+	/* Locale */
+	--header-locale-bg: transparent;
+	--header-locale-color: white;
+	--header-locale-border: white;
+
+	/* Locale Hover */
+	--header-locale-bg-hover: white;
+	--header-locale-color-hover: black;
+	--header-locale-border-hover: white;
+
+	/* Mobile Menu */
+	--mobile-menu-bg: white;
+	--hamburger-button-bg: white;
+	--hamburger-button-color: black;
+
+	--hamburger-button-bg-hover: black;
+	--hamburger-button-color-hover: white;
+
+
+	/* Footer */
+	--footer-bg: black;
+	--footer-color: white;
+
+	--chip-bg: var(--primary);
+}

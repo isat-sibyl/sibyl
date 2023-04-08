@@ -12,8 +12,12 @@
 	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#333333">
 	<meta name="msapplication-TileColor" content="#2b5797">
 	<meta name="theme-color" content="#ffffff">
-	<link rel="stylesheet" href="/styles.css">
 	<link rel="stylesheet" href="/flex.css">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="stylesheet" href="/variables.css">
+	<meta
+  name="description"
+  content="{{siteDescription}}">
 	<style>
 		.preload * {
 			-webkit-transition: none !important;
@@ -22,15 +26,19 @@
 			-o-transition: none !important;
 			transition: none !important;
 		}
+		html, body {
+			margin: 0;
+		}
 	</style>
 	<Slot name="Styles"></Slot>
 </head>
 <body class="preload" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between;">
+	<span id="locale" style="display: none;">{{LOCALE}}</span>
 	<Slot name="Header">
 		<Component name="Header" />
 	</Slot>
 
-	<main style="padding: 20px 10px 50px 10px;">
+	<main>
 		<Slot name="Content"></Slot>
 	</main>
 
@@ -40,7 +48,18 @@
 
 	<Slot name="Scripts"></Slot>	
 	<script defer>
-		window.onload = function() {document.body.classList.remove("preload");};
+		window.addEventListener('load', function() {
+			document.body.classList.remove("preload");
+		});
+		document.querySelectorAll('a[href^="#"]')
+		.forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+				e.preventDefault();
+				document.querySelector(this.getAttribute('href')).scrollIntoView({
+					behavior: 'smooth'
+				});
+			});
+		});
 	</script>
 </body>
 </html>
