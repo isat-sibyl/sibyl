@@ -388,10 +388,11 @@ class Parser:
 		if "LOCALES" not in self.context:
 			self.context["OTHER_LOCALES"] = self.get_other_locales(locale_file)
 	
-	def create_redirects_file(self, locales, default_locale):
+	def create_redirects_file(self, locale_files, default_locale):
 		"""Create a redirects file."""
 		redirects = open(os.path.join(self.settings['BUILD_PATH'], "_redirects"), "a", encoding = 'utf-8')
-		for locale in locales:
+		for locale_file in locale_files:
+			locale = locale_file.split(".", 1)[0]
 			redirects.write(f"/{locale}/* /{locale}/:splat 200\n")
 		redirects.write(f"/* /{default_locale}/:splat 200\n")
 
@@ -431,7 +432,7 @@ class Parser:
 				# remove empty directories
 				shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 		
-		self.create_redirects_file(self.settings["LOCALES"], self.settings["DEFAULT_LOCALE"])
+		self.create_redirects_file(locale_files, self.settings["DEFAULT_LOCALE"])
 		logging.info("Build complete in " + "{:.3f}".format(time.time() - start_time) + " seconds")
 
 if __name__ == '__main__':
