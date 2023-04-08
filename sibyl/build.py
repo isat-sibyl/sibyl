@@ -107,7 +107,7 @@ class Parser:
 		# ensure that the component exists
 		for path in self.settings["COMPONENTS_PATH"]:
 			if os.path.isfile(os.path.join(path, name + ".html")):
-				return path
+				return os.path.dirname(path)
 		raise ParseError("Component " + name + " not found. At " + self.get_debug_location())
 	
 	def process_attrs(self, tag : Tag, first_child : Tag):
@@ -348,13 +348,13 @@ class Parser:
 				# Build style
 				style = soup.find("style")
 				if style is not None:
-					style_file = open(f"{self.settings['BUILD_PATH']}/{path}/{component.split('.')[0]}.css", "w", encoding = 'utf-8')
+					style_file = open(f"{self.settings['BUILD_PATH']}/{os.path.dirname(path)}/{component.split('.')[0]}.css", "w", encoding = 'utf-8')
 					style_file.write(style.text)
 
 				# Build script
 				script = soup.find("script")
 				if script is not None:
-					js_file = open(f"{self.settings['BUILD_PATH']}/{path}/{component.split('.')[0]}.js", "w", encoding = 'utf-8')
+					js_file = open(f"{self.settings['BUILD_PATH']}/{os.path.dirname(path)}/{component.split('.')[0]}.js", "w", encoding = 'utf-8')
 					js_file.write(script.text)
 	
 	def add_global_context_values(self, global_context):
@@ -396,7 +396,7 @@ class Parser:
 		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/")
 
-		for path in self.settings["COMPONENTS_PATH"]:
+		for path in reversed(self.settings["COMPONENTS_PATH"]):
 			os.makedirs(os.path.dirname(os.path.join(self.settings['BUILD_PATH'], path)), exist_ok=True)
 			self.build_components(path)
 

@@ -12,4 +12,4 @@ if __name__ == '__main__':
 	for file in files:
 		shutil.copy(os.path.join(base_folder, file), file)
 	
-	print("Init successful, you must now install dependencies.")
+	print("Project initialized successfully.")
