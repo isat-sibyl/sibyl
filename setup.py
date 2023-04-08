@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name='sibyl',
-    version='0.0.16',
+    version='0.0.17',
     author='Pedro Cavalheiro',
     author_email='pedro.cavalheiro@isat.pt',
     description='Sibyl static site generator',
@@ -17,7 +17,7 @@ setuptools.setup(
     },
     license='All rights reserved',
     packages=['sibyl'],
-    package_data={'sibyl': ['components/*', 'layouts/*', 'locales/*', 'pages/*', 'static/*', 'settings.yaml', 'hot-reload.html', 'dev.bat', 'build.bat']},
+    package_data={'sibyl': ['components/*', 'layouts/*', 'locales/*', 'locales/.global.json', 'pages/*', 'static/*', 'settings.yaml', 'hot-reload.html', 'dev.bat', 'build.bat']},
     include_package_data=True,
     install_requires=[
 			'beautifulsoup4==4.12.2',
