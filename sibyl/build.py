@@ -397,7 +397,7 @@ class Parser:
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/")
 
 		for path in self.settings["COMPONENTS_PATH"]:
-			os.makedirs(os.path.dirname(os.path.join(self.settings['BUILD_PATH'], path), exist_ok=True))
+			os.makedirs(os.path.dirname(os.path.join(self.settings['BUILD_PATH'], path)), exist_ok=True)
 			self.build_components(path)
 
 		global_context = json.load(open(os.path.join(self.settings['LOCALES_PATH'], ".global.json")), encoding = 'utf-8')
