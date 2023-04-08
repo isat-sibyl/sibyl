@@ -369,13 +369,13 @@ class Parser:
 		for locale in os.listdir(self.settings["LOCALES_PATH"]):
 			if locale != locale_file and locale != ".global.json":
 				name = locale.split(".", 1)[0]
-				other_locales.append({"name": name, "path": f"/{name}/" if name != self.settings["DEFAULT_LOCALE"] else "/"})
+				other_locales.append({"name": name, "path": f"/{name}/"})
 		return other_locales
 	
 	def initialize_locale_context(self, locale_file, global_context):
 		"""Initialize the locale context."""
 		self.locale = locale_file.split(".", 1)[0]
-		self.base_path = "" if self.locale == self.settings["DEFAULT_LOCALE"] else self.locale
+		self.base_path = self.locale
 		self.context = {**global_context, **json.load(open(os.path.join(self.settings['LOCALES_PATH'], locale_file), encoding = 'utf-8'))}
 		self.context["LOCALE"] = self.locale
 		self.context["LOCATION"] = [self.locale]
@@ -387,6 +387,13 @@ class Parser:
 				self.context["ROOT"] += "/"
 		if "LOCALES" not in self.context:
 			self.context["OTHER_LOCALES"] = self.get_other_locales(locale_file)
+	
+	def create_redirects_file(self, locales, default_locale):
+		"""Create a redirects file."""
+		redirects = open(os.path.join(self.settings['BUILD_PATH'], "_redirects"), "w", encoding = 'utf-8')
+		for locale in locales:
+			redirects.write(f"/{locale}/* /{locale}/:splat 200\n")
+		redirects.write(f"/* /{default_locale}/:splat 200\n")
 
 	def build(self, debug=False):
 		"""Build the website."""
@@ -424,6 +431,7 @@ class Parser:
 				# remove empty directories
 				shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 		
+		self.create_redirects_file(locale_files, self.settings["DEFAULT_LOCALE"])
 		logging.info("Build complete in " + "{:.3f}".format(time.time() - start_time) + " seconds")
 
 if __name__ == '__main__':
