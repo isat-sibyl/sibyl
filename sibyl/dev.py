@@ -7,7 +7,7 @@ from http.server import SimpleHTTPRequestHandler
 from threading import Thread
 from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEventHandler
-import build
+from . import build
 import settings
 import socketserver
 import websockets
