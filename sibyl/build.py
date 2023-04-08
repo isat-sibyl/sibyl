@@ -348,12 +348,14 @@ class Parser:
 				# Build style
 				style = soup.find("style")
 				if style is not None:
+					logging.info("Building " + os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.css"))
 					style_file = open(os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.css"), "w", encoding = 'utf-8')
 					style_file.write(style.text)
 
 				# Build script
 				script = soup.find("script")
 				if script is not None:
+					logging.info("Building " + os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.js"))
 					js_file = open(os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.js"), "w", encoding = 'utf-8')
 					js_file.write(script.text)
 	
