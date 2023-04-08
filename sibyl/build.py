@@ -14,6 +14,11 @@ import yaml
 
 var_pattern = re.compile(r"{{\s*([^\s{}]+)\s*(\|\s*(\S+)\s*)?}}")
 
+def load_settings():
+	"""Load the settings from settings.yaml."""
+	with open("settings.yaml", "r", encoding="utf-8") as file:
+		return yaml.safe_load(file)
+
 class Parser:
 	def get_debug_location(self):
 		result = self.context.get('PATH', 'PATH NOT FOUND') + " " + str(self.context["LOCATION"])
@@ -375,10 +380,8 @@ class Parser:
 	def build(self, debug=False):
 		"""Build the website."""
 		start_time = time.time()
-
-		# load settings from cwd self.settings["yaml
-		yaml_string = open("settings.yaml", encoding = 'utf-8').read()
-		self.settings = yaml.load(yaml_string, Loader=yaml.Loader)
+		
+		self.settings = load_settings()
 
 		# Prepare build directory
 		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
