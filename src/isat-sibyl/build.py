@@ -69,7 +69,7 @@ class Parser:
 			- attribute values
 		"""
 		# replace all text contents
-		variables = element.find_all(text = var_pattern)
+		variables = element.find_all(string = var_pattern)
 		for variable in variables:
 			variable.replace_with(self.replace_var(variable.string))
 		

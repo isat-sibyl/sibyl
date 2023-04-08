@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "isat-sibyl"
+version = "0.0.1"
+authors = [
+  { name="Pedro Cavalheiro", email="pedro.cavalheiro@isat.pt" },
+]
+description = "Sibyl static site builder"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+	'beautifulsoup4==4.12.2',
+	'PyYAML==6.0',
+	'soupsieve==2.4',
+	'watchdog==3.0.0',
+	'websockets==11.0.1'
+]
+
+[project.urls]
+"Homepage" = "https://github.com/isat-sibyl/sibyl"
+"Bug Tracker" = "https://github.com/isat-sibyl/sibyl/issues"
