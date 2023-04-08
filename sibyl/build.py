@@ -397,9 +397,9 @@ class Parser:
 		# Prepare build directory
 		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/")
-
+		
+		os.makedirs(os.path.join(self.settings['BUILD_PATH'], "components"), exist_ok=True)
 		for path in reversed(self.settings["COMPONENTS_PATH"]):
-			os.makedirs(os.path.dirname(os.path.join(self.settings['BUILD_PATH'], path)), exist_ok=True)
 			self.build_components(path)
 
 		global_context = json.load(open(os.path.join(self.settings['LOCALES_PATH'], ".global.json")), encoding = 'utf-8')
