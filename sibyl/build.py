@@ -207,9 +207,10 @@ class Parser:
 			slot.extract()
 			
 			self.context["LOCATION"].pop()
-	
+
 	def repeat_replacement(self, tag : Tag):
 		"""Replace a for loop with the contents repeated."""
+		# print(tag)
 		self.context["LOCATION"].append("For " + tag["each"])
 		[each, of] = tag.get("each", "x in []").split(" in ")
 		if not of:
@@ -236,6 +237,7 @@ class Parser:
 				while match is not None:
 					self.repeat_replacement(match)
 					match = new_tag.find("for")
+				
 				to_add.append(new_tag)
 				index += 1
 			prev = tag
@@ -247,6 +249,24 @@ class Parser:
 
 		self.context = old_context
 		self.context["LOCATION"].pop()
+	
+	def build_partial(self, template_soup : Tag, output_path):
+		"""Replace all variables and components in a template."""
+		required_styles = set()
+		required_scripts = set()
+		for component in template_soup.find_all("component"):
+			(styles, scripts) = self.components_replacement(component)
+			required_styles.update(styles)
+			required_scripts.update(scripts)
+		
+		# write to file
+		with open(output_path, "w", encoding = 'utf-8') as f:
+			f.write(self.replace_var(str(template_soup))) # write the result with replaced variables
+
+		with open(output_path + ".requirements.json", "w", encoding = 'utf-8') as f:
+			f.write(json.dumps({"styles": [str(x) for x in required_styles], "scripts": [str(x) for x in required_scripts], "layout": template_soup.find("settings")['layout'], "locale": self.context["LOCALE"]}))
+		
+		return (required_styles, required_scripts)
 	
 	def template_replacement(self, build_path, debug=False):
 		"""Replace all variables and components in a template."""
@@ -260,7 +280,8 @@ class Parser:
 				break
 		else:
 			raise ParseError("Layout " + page_settings['layout'] + " not found")
-		
+
+		self.build_partial(page_soup, build_path + "partial.html")		
 		shutil.copyfile(os.path.join(path, f"{page_settings['layout']}.html"), build_path + "index.html") # copy the layout and use it as a base
 		with open(build_path + "index.html", "r+", encoding = 'utf-8') as file:
 			soup = BeautifulSoup(file, 'html.parser')
@@ -301,8 +322,22 @@ class Parser:
 
 			file.seek(0) # move to the beginning of the file
 			file.truncate(0) # clear file
-			file.write(self.replace_var(str(soup))) # write the result with replaced variables and pretiffied
+			file.write(self.replace_var(str(soup))) # write the result with replaced variables
 		os.remove(build_path + "index.html.temp") # clean temp file
+	
+	def build_layouts(self, path):
+		"""Build all layouts."""
+		for layout in os.listdir(path):
+			self.context["LOCATION"].append(layout)
+			if os.path.isdir(layout):
+				self.build_layouts(layout)
+			else:
+				build_path = os.path.join(self.settings["BUILD_PATH"], "layouts")
+				if not os.path.exists(build_path):
+					os.makedirs(build_path)
+				shutil.copyfile(os.path.join(path, layout), os.path.join(build_path, layout))
+				self.template_replacement(build_path + "/")
+			self.context["LOCATION"].pop()
 	
 	def build_pages(self, path, debug=False):
 		"""Build all pages in a directory."""
@@ -399,11 +434,11 @@ class Parser:
 	def build(self, debug=False):
 		"""Build the website."""
 		start_time = time.time()
-		
 		self.settings = load_settings()
+		self.built_layouts = set()
 
 		# Prepare build directory
-		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
+		shutil.rmtree(self.settings["BUILD_PATH"] + "/")
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/")
 		
 		os.makedirs(os.path.join(self.settings['BUILD_PATH'], "components"), exist_ok=True)
