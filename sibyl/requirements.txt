@@ -1,0 +1,6 @@
+beautifulsoup4>=4.12.2
+PyYAML>=6.0
+-e git+ssh://git@github.com/isat-sibyl/sibyl.git#egg=sibyl
+soupsieve>=2.4
+watchdog>=3.0.0
+websockets>=11.0.1

@@ -13,3 +13,5 @@ if __name__ == '__main__':
 		shutil.copy(os.path.join(base_folder, file), file)
 	
 	print("Project initialized successfully.")
+	print("To start the development server, run 'sibyl dev' or 'python -m sibyl.dev'")
+	print("To build the project, run 'sibyl build' or 'python -m sibyl.build'")
