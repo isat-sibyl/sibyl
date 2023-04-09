@@ -36,7 +36,7 @@
 	}
 
 	function showDialog(message) {
-		dialogs = document.getElementsByClassName("dialog");
+		const dialogs = document.getElementsByClassName("dialog");
 		for (const dialog of dialogs) {
 			dialog.classList += " active";
 			dialog.innerHTML = message;
