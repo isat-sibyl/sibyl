@@ -169,6 +169,11 @@ class Parser:
 			self.repeat_replacement(match)
 			match = template.find("for")
 		
+		match = template.find("if")
+		while match is not None:
+			self.conditional_replacement(match)
+			match = template.find("if")
+		
 		self.slots_replacement(component_soup, tag, component=True)
 		self.vars_replacement(template)
 		
@@ -210,38 +215,42 @@ class Parser:
 	
 	def conditional_replacement(self, tag : Tag):
 		"""Conditionally replace a tag with its contents."""
-		self.context["LOCATION"].append("If " + tag["condition"])
+		self.context["LOCATION"].append("If " + tag.get("condition"))
 		remaining = None
-		condition = self.resolve_var(tag["condition"])
+		condition = tag.get("condition")
 		negative = condition.startswith("!")
+
 		if negative:
 			condition = condition[1:]
-		if self.resolve_var(condition) != negative:
-			remaining = tag.next_sibling
+
+		if bool(self.resolve_var(condition)) != negative:
+			remaining = tag.find_next_sibling()
 			tag.insert_after(*tag.contents)
 			tag.extract()
 		else:
 			# check if next tag is an else tag
-			next_tag = tag.next_sibling
+			next_tag = tag.find_next_sibling()
 			tag.extract()
 			while next_tag is not None and next_tag.name == "else":
 				condition = next_tag.get("condition")
-				negative = condition.startswith("!")
+				negative = condition is not None and condition.startswith("!")
 				if negative:
 					condition = condition[1:]
-				if condition is None or self.resolve_var(condition) != negative:
-					remaining = next_tag.next_sibling
+				if condition is None or bool(self.resolve_var(condition)) != negative:
+					remaining = next_tag.find_next_sibling()
 					next_tag.insert_after(*next_tag.contents)
 					next_tag.extract()
 					break
 				else:
-					next_candidate = next_tag.next_sibling
+					next_candidate = next_tag.find_next_sibling()
 					next_tag.extract()
 					next_tag = next_candidate
 		while remaining is not None and remaining.name == "else":
-			next_candidate = remaining.next_sibling
+			next_candidate = remaining.find_next_sibling()
 			remaining.extract()
 			remaining = next_candidate
+		
+		self.context["LOCATION"].pop()
 		
 	def repeat_replacement(self, tag : Tag):
 		"""Replace a for loop with the contents repeated."""
@@ -267,6 +276,7 @@ class Parser:
 				self.context["INDEX"] = index
 				
 				new_tag = BeautifulSoup(self.replace_var(template), 'html.parser')
+
 				match = new_tag.find("for")
 				while match is not None:
 					self.repeat_replacement(match)
@@ -337,6 +347,11 @@ class Parser:
 			while match is not None:
 				self.repeat_replacement(match)
 				match = soup.find("for")
+			
+			match = soup.find("if")
+			while match is not None:
+				self.conditional_replacement(match)
+				match = soup.find("if")
 			
 			style = page_soup.find("style")
 			if style is not None:
