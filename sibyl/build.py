@@ -439,14 +439,15 @@ class Parser:
 
 		# Prepare build directory
 		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
+		os.makedirs(self.settings["BUILD_PATH"], exist_ok=True)
 
-		sibyl_static = os.path.join(os.path.dirname(__file__), "sibyl-static")
+		sibyl_static = os.path.join(os.path.dirname(__file__), "sibyl-static")		
 
 		# Copy static files
 		for file in os.listdir(sibyl_static):
 			shutil.copyfile(os.path.join(sibyl_static, file), os.path.join(self.settings["BUILD_PATH"], file))
 
-		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/")
+		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/", dirs_exist_ok=True)
 		# move everything in the favicon directory to the root
 		for file in os.listdir(os.path.join(self.settings["BUILD_PATH"], "favicon")):
 			shutil.move(os.path.join(self.settings["BUILD_PATH"], "favicon", file), self.settings["BUILD_PATH"])
