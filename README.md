@@ -29,7 +29,7 @@ To create a new project, navigate to the desired directory and run the following
 sibyl init
 ```
 
-This will generate a new project structure with necessary files, including `dev.bat` and `build.bat` for running development and build commands.
+This will generate a new project structure with the necessary files.
 
 ### Starting a development server
 
