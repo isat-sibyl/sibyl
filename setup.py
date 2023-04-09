@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name='sibyl',
-    version='0.1.1',
+    version='0.1.2',
     author='Pedro Cavalheiro',
     author_email='pedro.cavalheiro@isat.pt',
     description='Sibyl static site generator',

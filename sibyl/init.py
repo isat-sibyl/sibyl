@@ -4,7 +4,7 @@ import shutil
 if __name__ == '__main__':
 	base_folder = os.path.dirname(__file__)
 	folders = ['layouts', 'locales', 'pages', 'static']
-	files = ['settings.yaml', 'dev.bat', 'build.bat']
+	files = ['settings.yaml', 'Pipfile', 'requirements.txt']
 	for folder in folders:
 		shutil.copytree(os.path.join(base_folder, folder), folder, dirs_exist_ok=True)
 	os.makedirs("components", exist_ok=True)
