@@ -29,7 +29,15 @@ If you do not have access to this GitHub repo from your shell, you will need to 
 ssh-keygen -t ed25519 -C "your_email@example.com"
 ```
 
-2. Follow the steps in [GitHub's documentation](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) to add your ssh key to your GitHub account.
+2. Manually clone any repo via ssh before proceeding to the next step. For example, to clone this repo, run:
+
+```
+git clone git@github.com:isat-sibyl/sibyl.git
+```
+
+You will be prompted to trust the host. Verify that the fingerprint matches GitHub's fingerprint and type `yes` to continue.
+
+3. Follow the steps in [GitHub's documentation](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) to add your ssh key to your GitHub account.
 
 ## Usage
 

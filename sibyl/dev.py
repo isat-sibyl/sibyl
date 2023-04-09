@@ -55,6 +55,11 @@ class RequestHandler(SimpleHTTPRequestHandler):
 		self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
 		self.send_header("Pragma", "no-cache")
 		self.send_header("Expires", "0")
+	
+	def do_GET(self):
+		if self.path == "/":
+			self.send_response(302)
+			self.send_header("Location", "/" + settings["DEFAULT_LOCALE"] + "/")
 
 async def handler(websocket : websockets.WebSocketServerProtocol):
 	"""A websocket handler that sends a reload signal to all connected clients when a reload signal is received."""

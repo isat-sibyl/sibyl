@@ -438,7 +438,7 @@ class Parser:
 		self.built_layouts = set()
 
 		# Prepare build directory
-		shutil.rmtree(self.settings["BUILD_PATH"] + "/")
+		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/")
 		
 		os.makedirs(os.path.join(self.settings['BUILD_PATH'], "components"), exist_ok=True)
