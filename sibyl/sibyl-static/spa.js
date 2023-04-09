@@ -88,7 +88,7 @@ function getPages() {
 		if (link in pages) {
 			continue;
 		}
-		fetch(`${link}/partial.html.requirements.json`)
+		fetch(`${link}partial.html.requirements.json`)
 		.then(response => response.json())
 		.then(data => {
 			pages[link] = data;

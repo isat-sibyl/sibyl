@@ -303,6 +303,16 @@ class Parser:
 			required_styles.update(styles)
 			required_scripts.update(scripts)
 		
+		match = template_soup.find("for")
+		while match is not None:
+			self.repeat_replacement(match)
+			match = template_soup.find("for")
+		
+		match = template_soup.find("if")
+		while match is not None:
+			self.conditional_replacement(match)
+			match = template_soup.find("if")
+	
 		# write to file
 		with open(output_path, "w", encoding = 'utf-8') as f:
 			f.write(self.replace_var(str(template_soup))) # write the result with replaced variables
@@ -490,13 +500,11 @@ class Parser:
 		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
 		os.makedirs(self.settings["BUILD_PATH"], exist_ok=True)
 
-		sibyl_static = os.path.join(os.path.dirname(__file__), "sibyl-static")		
+		sibyl_static = os.path.join(os.path.dirname(__file__), "sibyl-static")	
 
-		# Copy static files
-		for file in os.listdir(sibyl_static):
-			shutil.copyfile(os.path.join(sibyl_static, file), os.path.join(self.settings["BUILD_PATH"], file))
-
+		shutil.copytree(sibyl_static, self.settings["BUILD_PATH"] + "/", dirs_exist_ok=True)
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/", dirs_exist_ok=True)
+
 		# move everything in the favicon directory to the root
 		favicon_path = os.path.join(self.settings["BUILD_PATH"], "favicon")
 		if not os.path.exists(favicon_path):
