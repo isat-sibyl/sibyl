@@ -449,10 +449,12 @@ class Parser:
 
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/", dirs_exist_ok=True)
 		# move everything in the favicon directory to the root
+		favicon_path = os.path.join(self.settings["BUILD_PATH"], "favicon")
+		if not os.path.exists(favicon_path):
+			favicon_path = os.path.join(os.path.dirname(__file__), "static", "favicon")
+			
 		for file in os.listdir(os.path.join(self.settings["BUILD_PATH"], "favicon")):
 			shutil.move(os.path.join(self.settings["BUILD_PATH"], "favicon", file), self.settings["BUILD_PATH"])
-
-		
 		
 		os.makedirs(os.path.join(self.settings['BUILD_PATH'], "components"), exist_ok=True)
 		for path in reversed(self.settings["COMPONENTS_PATH"]):
