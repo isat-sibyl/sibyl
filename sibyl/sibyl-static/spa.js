@@ -1,3 +1,5 @@
+const sibylPartialsPages = {};
+
 function smoothScroll(e) {
 	e.preventDefault();
 	document.querySelector(this.getAttribute('href'))
@@ -15,6 +17,15 @@ function awaitScript(script) {
 			resolve();
 		});
 	})
+}
+
+function standardizeLink(link) {
+	return link.replace(/(\?.*)?(#.*)?\/?$/, "") + "/";
+}
+
+function changeState() {
+	const href = standardizeLink(window.location.href);
+	requestPageChange(href);
 }
 
 function changePage(data, promises) {
@@ -76,6 +87,57 @@ function changePage(data, promises) {
 	});
 }
 
+function requestPageChange(href) {
+	const promises = [];
+	const requirements = sibylPartialsPages[href];
+
+	for (const requirement of requirements["scripts"]) {
+		if (document.querySelector(`script[src="${requirement}"]`)) {
+			continue;
+		}
+		const script = document.createElement("script");
+		script.src = requirement;
+		document.body.appendChild(script);
+		promises.push(awaitScript(script));
+	}
+
+	for (const requirement of requirements["styles"]) {
+		if (document.querySelector(`link[href="${requirement}"]`)) {
+			continue;
+		}
+		const style = document.createElement("link");
+		style.href = requirement;
+		style.rel = "stylesheet";
+		document.head.appendChild(style);
+	}
+	
+	fetch(`${href}partial.html`)
+	.then(response => response.text())
+	.then((data) => changePage(data, promises));
+}
+
+function onLinkClick(e) {
+	const el = e.target;
+	const href = standardizeLink(el.href);
+	const locale = document.getElementById("locale").innerText;
+	const layout = document.getElementById("layout").innerText;
+	
+	if (href == window.location.href) {
+		e.preventDefault();
+		return;
+	}
+	const requirements = sibylPartialsPages[href];
+	if (!requirements || requirements['locale'] != locale || requirements['layout'] != layout) {
+		e.preventDefault();
+		return;
+	}
+
+	e.preventDefault();
+
+	history.pushState(null, null, el.href);
+	requestPageChange(href);
+}
+
 function getPages() {
 	const locale = document.getElementById("locale").innerText;
 	const links = [];
@@ -85,60 +147,19 @@ function getPages() {
 	}
 
 	for (const link of links) {
-		if (link in pages) {
+		const cleanLink = standardizeLink(link);
+		if (link in sibylPartialsPages) {
 			continue;
 		}
-		fetch(`${link}partial.html.requirements.json`)
+		fetch(`${cleanLink}partial.html.requirements.json`)
 		.then(response => response.json())
 		.then(data => {
-			pages[link] = data;
+			sibylPartialsPages[cleanLink] = data;
 		});
 	}
 
 	for (const el of linkElements) {
-		el.addEventListener("click", (e) => {
-			const locale = document.getElementById("locale").innerText;
-			const layout = document.getElementById("layout").innerText;
-			
-			if (el.href == window.location.href) {
-				e.preventDefault();
-				return;
-			}
-			const requirements = pages[el.href];
-			if (!requirements || requirements['locale'] != locale || requirements['layout'] != layout) {
-				return;
-			}
-
-			e.preventDefault();
-
-			history.pushState(null, null, el.href);
-
-			const promises = [];
-
-			for (const requirement of requirements["scripts"]) {
-				if (document.querySelector(`script[src="${requirement}"]`)) {
-					continue;
-				}
-				const script = document.createElement("script");
-				script.src = requirement;
-				document.body.appendChild(script);
-				promises.push(awaitScript(script));
-			}
-
-			for (const requirement of requirements["styles"]) {
-				if (document.querySelector(`link[href="${requirement}"]`)) {
-					continue;
-				}
-				const style = document.createElement("link");
-				style.href = requirement;
-				style.rel = "stylesheet";
-				document.head.appendChild(style);
-			}
-			
-			fetch(`${el.href}partial.html`)
-			.then(response => response.text())
-			.then((data) => changePage(data, promises));
-		});
+		el.addEventListener("click", onLinkClick);
 	}
 }
 
@@ -151,7 +172,4 @@ window.addEventListener('load', function() {
 window.addEventListener('unload', function() {
 	document.body.classList.add("preload");
 });
-
-const pages = {};
-
-
+window.addEventListener('popstate', changeState);
