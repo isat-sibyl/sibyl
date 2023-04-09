@@ -207,10 +207,44 @@ class Parser:
 			slot.extract()
 			
 			self.context["LOCATION"].pop()
-
+	
+	def conditional_replacement(self, tag : Tag):
+		"""Conditionally replace a tag with its contents."""
+		self.context["LOCATION"].append("If " + tag["condition"])
+		remaining = None
+		condition = self.resolve_var(tag["condition"])
+		negative = condition.startswith("!")
+		if negative:
+			condition = condition[1:]
+		if self.resolve_var(condition) != negative:
+			remaining = tag.next_sibling
+			tag.insert_after(*tag.contents)
+			tag.extract()
+		else:
+			# check if next tag is an else tag
+			next_tag = tag.next_sibling
+			tag.extract()
+			while next_tag is not None and next_tag.name == "else":
+				condition = next_tag.get("condition")
+				negative = condition.startswith("!")
+				if negative:
+					condition = condition[1:]
+				if condition is None or self.resolve_var(condition) != negative:
+					remaining = next_tag.next_sibling
+					next_tag.insert_after(*next_tag.contents)
+					next_tag.extract()
+					break
+				else:
+					next_candidate = next_tag.next_sibling
+					next_tag.extract()
+					next_tag = next_candidate
+		while remaining is not None and remaining.name == "else":
+			next_candidate = remaining.next_sibling
+			remaining.extract()
+			remaining = next_candidate
+		
 	def repeat_replacement(self, tag : Tag):
 		"""Replace a for loop with the contents repeated."""
-		# print(tag)
 		self.context["LOCATION"].append("For " + tag["each"])
 		[each, of] = tag.get("each", "x in []").split(" in ")
 		if not of:
