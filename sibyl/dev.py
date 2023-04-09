@@ -60,6 +60,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
 		if self.path == "/":
 			self.send_response(302)
 			self.send_header("Location", "/" + settings["DEFAULT_LOCALE"] + "/")
+			self.end_headers()
+		else:
+			SimpleHTTPRequestHandler.do_GET(self)
 
 async def handler(websocket : websockets.WebSocketServerProtocol):
 	"""A websocket handler that sends a reload signal to all connected clients when a reload signal is received."""

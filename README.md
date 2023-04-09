@@ -49,6 +49,12 @@ To create a new project, navigate to the desired directory and run the following
 sibyl init
 ```
 
+or
+
+```
+python -m sibyl.init
+```
+
 This will generate a new project structure with the necessary files.
 
 ### Starting a development server
