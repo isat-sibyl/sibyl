@@ -439,7 +439,14 @@ class Parser:
 
 		# Prepare build directory
 		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
+
+		shutil.copytree("flex.css", self.settings["BUILD_PATH"] + "/")
+		shutil.copytree("spa.js", self.settings["BUILD_PATH"] + "/")
+
 		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/")
+		# move everything in the favicon directory to the root
+		for file in os.listdir(os.path.join(self.settings["BUILD_PATH"], "favicon")):
+			shutil.move(os.path.join(self.settings["BUILD_PATH"], "favicon", file), self.settings["BUILD_PATH"])
 		
 		os.makedirs(os.path.join(self.settings['BUILD_PATH'], "components"), exist_ok=True)
 		for path in reversed(self.settings["COMPONENTS_PATH"]):
