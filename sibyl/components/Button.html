@@ -1,5 +1,10 @@
 <template>
-	<a class="button shadow text-shadow" style="padding: 15px 40px;" href="{{href | {{ROOT}}{{page}}}}" rel="noreferrer noopener" target="_blank"><Slot>{{label}}</Slot></a>
+	<If condition="href">
+		<a class="button shadow text-shadow" style="padding: 15px 40px;" href="{{href}}" rel="noreferrer noopener" target="_blank"><Slot>{{label}}</Slot></a>
+	</If>
+	<Else condition="page">
+		<a class="button shadow text-shadow" style="padding: 15px 40px;" href="{{ROOT}}{{page}}"><Slot>{{label}}</Slot></a>
+	</Else>
 </template>
 
 <style>
