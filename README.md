@@ -13,11 +13,23 @@ Sibyl is a static site builder written in Python. It allows you to easily create
 
 Ensure that you have Python 3.7 or higher installed. You can download the latest version of Python from [https://www.python.org/downloads/](https://www.python.org/downloads/).
 
-To install Sibyl, make sure you have access to this GitHub repo from your shell (the easiest way on Windows is to install GitHub Desktop) and run the following command:
+To install Sibyl, make sure you have access to this GitHub repo from your shell (see adding ssh keys below) and run the following command:
 
 ```
 pip install git+ssh://git@github.com/isat-sibyl/sibyl.git#egg=sibyl[dev]
 ```
+
+## Adding ssh keys to your shell (if needed)
+
+If you do not have access to this GitHub repo from your shell, you will need to add your ssh keys to your shell. To do this, follow the instructions below:
+
+1. Generate a new ssh key by running the following command (replace the email with your own):
+
+```
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+
+2. Follow the steps in [GitHub's documentation](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) to add your ssh key to your GitHub account.
 
 ## Usage
 
