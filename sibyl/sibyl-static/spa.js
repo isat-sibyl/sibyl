@@ -36,6 +36,16 @@ function changePage(data, promises) {
 	const scripts = doc.querySelector("Scripts");
 	const styles = doc.querySelector("Styles");
 	const main = document.getElementById("main");
+	const pageTitle = doc.querySelector("PageTitle");
+	if (pageTitle) {
+		document.title = pageTitle.innerText;
+	}
+	else {
+		const defaultTitle = document.getElementById("default-title");
+		if (defaultTitle) {
+			document.title = defaultTitle.innerText;
+		}
+	}
 	main.innerHTML = content.innerHTML;
 
 	if (scripts) {
