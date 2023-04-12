@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ LOCALE }}">
+<html lang="{{ SIBYL_LOCALE }}">
 	<head>
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>{{siteName}}</title>
+		<title><Slot name="title">{{siteName}}</Slot></title>
 		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -26,23 +26,45 @@
 			}
 			html, body {
 				margin: 0;
+				font-family: system-ui;
+			}
+
+			main {
+				padding: 10px;
+			}
+
+			html.dark {
+				background-color: #1a1a1a;
+				color: #ededed;
+			}
+
+			/* prefers reduced motion */
+			@media (prefers-reduced-motion: reduce) {
+				* {
+					transition: none !important;
+				}
 			}
 		</style>
-		<Slot name="Styles"></Slot>
 	</head>
 	<body class="preload" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between;">
-		<span id="locale" style="display: none;">{{LOCALE}}</span>
+		<span id="locale" style="display: none;">{{SIBYL_LOCALE}}</span>
 		<span id="layout" style="display: none;">main_layout</span>
+		<span id="default-title" style="display: none;">{{siteName}}</span>
 		
 		<Component name="Header" />
 
-		<main id="main">
-			<Slot name="Content"></Slot>
+		<main id="main" class="flex column ca vca" style="flex-grow: 1;">
+			<Slot name="template"></Slot>
 		</main>
 
 		<Component name="Footer"/>
 
-		<Slot name="Scripts"></Slot>
 		<script defer src="/spa.js"></script>
+		<script>
+			// if the user has a preference for dark mode, let's respect it
+			if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.classList.add('dark');
+			}
+		</script>
 	</body>
 </html>

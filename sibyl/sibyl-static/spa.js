@@ -1,4 +1,5 @@
 const sibylPartialsPages = {};
+const sibylImportedDependencies = Set();
 
 function smoothScroll(e) {
 	e.preventDefault();
@@ -6,6 +7,15 @@ function smoothScroll(e) {
 	.scrollIntoView({
 		behavior: 'smooth'
 	});
+}
+
+function handleFetchResponse(response) {
+	{
+		if (!response.ok) {
+			throw Error(response.statusText);
+		}
+		return response.json();
+	}
 }
 
 function awaitScript(script) {
@@ -32,11 +42,9 @@ function changePage(data, promises) {
 	dispatchEvent(new Event('unload'));
 	const parser = new DOMParser();
 	const doc = parser.parseFromString(data, "text/html");
-	const content = doc.querySelector("Content");
-	const scripts = doc.querySelector("Scripts");
-	const styles = doc.querySelector("Styles");
+	const content = doc.querySelector("template");
 	const main = document.getElementById("main");
-	const pageTitle = doc.querySelector("PageTitle");
+	const pageTitle = content.title
 	if (pageTitle) {
 		document.title = pageTitle.innerText;
 	}
@@ -48,26 +56,21 @@ function changePage(data, promises) {
 	}
 	main.innerHTML = content.innerHTML;
 
-	if (scripts) {
-		for (const script of scripts.children) {
-			if (!document.querySelector(`script[src="${script.src}"]`)) {
-				const newScript = document.createElement("script");
-				
-				for (const attr of script.attributes) {
-					newScript.setAttribute(attr.name, attr.value);
-				}
-
-				document.body.appendChild(newScript);
-				promises.push(awaitScript(newScript));
-			}
+	for (const [key, value] of Object.entries(data)) {
+		if (sibylImportedDependencies.has(key)) {
+			continue;
 		}
-	}
-
-	if (styles) {
-		for (const style of styles.children) {
-			if (!document.querySelector(`link[href="${style.href}"]`)) {
-				document.head.appendChild(style);
-			}
+		sibylImportedDependencies.add(key);
+		if (value.type === "STYLE") {
+			const style = document.createElement("style");
+			style.href = value.path;
+			document.head.appendChild(style);
+		}
+		else if (value.type === "SCRIPT") {
+			const script = document.createElement("script");
+			script.src = value.path;
+			script.defer = true;
+			document.body.appendChild(script);
 		}
 	}
 
@@ -102,28 +105,35 @@ function requestPageChange(href) {
 	const requirements = sibylPartialsPages[href];
 
 	for (const requirement of requirements["scripts"]) {
-		if (document.querySelector(`script[src="${requirement}"]`)) {
+		// create a script element from the requirement
+		const temp = document.createElement("div");
+		temp.innerHTML = requirement;
+		const script = temp.firstChild;
+		if (document.querySelector(`script[src="${script.src}"]`)) {
 			continue;
 		}
-		const script = document.createElement("script");
-		script.src = requirement;
 		document.body.appendChild(script);
 		promises.push(awaitScript(script));
 	}
 
 	for (const requirement of requirements["styles"]) {
-		if (document.querySelector(`link[href="${requirement}"]`)) {
+		// create a link element from the requirement
+		const temp = document.createElement("div");
+		temp.innerHTML = requirement;
+		const link = temp.firstChild;
+		if (document.querySelector(`link[href="${link.href}"]`)) {
 			continue;
 		}
-		const style = document.createElement("link");
-		style.href = requirement;
-		style.rel = "stylesheet";
-		document.head.appendChild(style);
+		document.head.appendChild(link);
 	}
 	
 	fetch(`${href}partial.html`)
 	.then(response => response.text())
-	.then((data) => changePage(data, promises));
+	.then((data) => changePage(data, promises))
+	.catch((error) => {
+		console.error('Error:', error);
+		window.href="/500";
+	});
 }
 
 function onLinkClick(e) {
@@ -133,12 +143,11 @@ function onLinkClick(e) {
 	const layout = document.getElementById("layout").innerText;
 	
 	if (href == window.location.href) {
-		e.preventDefault();
 		return;
 	}
-	const requirements = sibylPartialsPages[href];
+
+	const requirements = sibylPartialsPages[href];	
 	if (!requirements || requirements['locale'] != locale || requirements['layout'] != layout) {
-		e.preventDefault();
 		return;
 	}
 
@@ -156,15 +165,28 @@ function getPages() {
 		links.push(link.href);
 	}
 
+	const initialPage = standardizeLink(window.location.href);
+	sibylPartialsPages[initialPage] = false;
+	fetch(`${initialPage}partial.requirements.json`)
+	.then(handleFetchResponse)
+	.then(data => {
+		sibylPartialsPages[initialPage] = data;
+		Object.keys(data).forEach(sibylImportedDependencies.add, sibylImportedDependencies);
+	})
+
 	for (const link of links) {
 		const cleanLink = standardizeLink(link);
-		if (link in sibylPartialsPages) {
+		if (sibylPartialsPages[cleanLink] !== undefined) {
 			continue;
 		}
-		fetch(`${cleanLink}partial.html.requirements.json`)
-		.then(response => response.json())
+		sibylPartialsPages[cleanLink] = false;
+		fetch(`${cleanLink}partial.requirements.json`)
+		.then(handleFetchResponse)
 		.then(data => {
 			sibylPartialsPages[cleanLink] = data;
+		})
+		.catch((error) => {
+			console.error('Error:', error);
 		});
 	}
 

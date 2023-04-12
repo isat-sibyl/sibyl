@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 def try_build():
 	"""Try to build the site, and log any errors."""
 	try:
-		build.Parser().build(True)
+		build.Build()
 	except Exception as e:
 		logging.error("Failed to rebuild")
 		logging.error(e)

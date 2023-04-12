@@ -347,7 +347,8 @@ class Build:
 			if page.script:
 				layout_soup.body.append(page.script)
 			if page.style:
-				layout_soup.body.append(page.style)
+				page.style.attrs["id"] = "sibyl-page-style"
+				layout_soup.head.append(page.style)
 			
 			# inject all the requirements
 			for req in self.requirements:
