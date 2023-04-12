@@ -8,13 +8,15 @@ from threading import Thread
 from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEventHandler
 from . import build
+from .helpers import settings
 import socketserver
 import websockets
 from websockets.server import serve
 import signal
 
+
 connected = set()
-settings = build.load_settings()
+settings = settings.Settings()
 
 logging.basicConfig(level=logging.INFO)
 
