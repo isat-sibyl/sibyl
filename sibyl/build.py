@@ -1,4 +1,5 @@
 import copy
+import glob
 import json
 import logging
 import os
@@ -257,7 +258,14 @@ class Build:
 		self.expand_variables(template)
 		for tag in template.find_all(recursive=False):
 			self.perform_replacements(tag)
-			
+	
+	def create_redirects_file(self, locales, default_locale):
+		"""Create a redirects file."""
+		redirects = open(os.path.join(self.settings.build_path, "_redirects"), "a", encoding = 'utf-8')
+		for locale in locales:
+			redirects.write(f"/{locale}/* /{locale}/:splat 200\n")
+		redirects.write(f"/* /{default_locale}/:splat 200\n")
+
 	def build_page(self, page_path : str): # NOSONAR
 		"""Builds the page in the given page_path. The page_path is inside .build_files"""
 		self.debug_path.append(os.path.basename(page_path))
@@ -462,6 +470,15 @@ class Build:
 
 		# Step 10: Delete the .build_files folder
 		shutil.rmtree(self.build_files_path)
+
+		if not self.settings.debug:
+			# move all files at */404/index.html to */404.html
+			for path in glob.glob(f"{self.settings['BUILD_PATH']}/**/404/index.html", recursive=True):
+				shutil.move(path, path.replace("\\index.html", ".html").replace("/index.html", ".html"))
+				# remove empty directories
+				shutil.rmtree(os.path.dirname(path), ignore_errors=True)
+
+		self.create_redirects_file(self.locales, self.settings.default_locale)
 
 if __name__ == "__main__":
 	# get start time
