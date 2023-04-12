@@ -70,27 +70,45 @@ class Component:
 	def requirement_name(self):
 		"""Return the name of the requirement."""
 		return "component" + self.name
+
+	def build_requirement(self, file, component_path):
+		output_path = os.path.join(settings.build_path, file)
+		if os.path.exists(output_path):
+			return
+		os.makedirs(os.path.dirname(output_path), exist_ok=True)
+		with open(output_path, "w+", encoding="utf-8") as file:
+			file.write(self.style.text)
 	
 	def get_self_requirements(self, settings : settings.Settings):
 		result = []
+		base_req_file = self.file.replace(os.environ["SIBYL_PATH"], settings.cdn_url).replace("\\", "/")
 		if self.style:
-			req_file = self.file.replace(os.environ["SIBYL_PATH"], settings.cdn_url).replace("\\", "/").replace(".html", ".css")
+			style_req_file = base_req_file.replace(".html", ".css")
 			result.append(
 				Requirement(
 					self.requirement_name(), 
 			    RequirementType.STYLE,
-					req_file
+					style_req_file
 				)
 			)
+			
 		if self.script:
-			req_file = self.file.replace(os.environ["SIBYL_PATH"], settings.cdn_url).replace("\\", "/").replace(".html", ".js")
+			script_req_file = base_req_file.replace(".html", ".js")
 			result.append(
 				Requirement(
 					self.requirement_name(), 
 			    RequirementType.SCRIPT,
-					req_file
+					script_req_file
 				)
 			)
+		for component_path in settings.components_paths:
+			if os.environ["SIBYL_PATH"] in component_path or not base_req_file.startswith(component_path):
+				continue
+			if self.style:
+				self.build_requirement(style_req_file, component_path)
+			if self.script:
+				self.build_requirement(script_req_file, component_path)
+			
 		return result
 
 	def get_imported_requirements(self):
