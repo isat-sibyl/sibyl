@@ -33,9 +33,13 @@ class Requirement:
 	
 	def to_tag(self) -> bs4.Tag:
 		"""Convert the requirement to a tag."""
+		path = self.path
+		# if the path isn't to an absolute URL, add a slash to the start
+		if not path.startswith("http://") and not path.startswith("https://"):
+			path = "/" + path
 		if self.type == RequirementType.SCRIPT:
-			return bs4.Tag(name="script", attrs={"defer": "", "src": self.path})
+			return bs4.Tag(name="script", attrs={"defer": "", "src": path})
 		elif self.type == RequirementType.STYLE:
-			return bs4.Tag(name="link", attrs={"rel": "stylesheet", "href": self.path}, can_be_empty_element=True)
+			return bs4.Tag(name="link", attrs={"rel": "stylesheet", "href": path}, can_be_empty_element=True)
 		else:
 			raise ValueError("Unknown requirement type: " + self.type.name)

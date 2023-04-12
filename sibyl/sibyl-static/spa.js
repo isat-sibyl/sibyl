@@ -1,5 +1,5 @@
 const sibylPartialsPages = {};
-const sibylImportedDependencies = Set();
+const sibylImportedDependencies = new Set();
 
 function smoothScroll(e) {
 	e.preventDefault();
@@ -46,33 +46,15 @@ function changePage(data, promises) {
 	const main = document.getElementById("main");
 	const pageTitle = content.title
 	if (pageTitle) {
-		document.title = pageTitle.innerText;
+		document.title = pageTitle;
 	}
 	else {
 		const defaultTitle = document.getElementById("default-title");
 		if (defaultTitle) {
-			document.title = defaultTitle.innerText;
+			document.title = defaultTitle.innerText.replace(/\s/g, "");
 		}
 	}
 	main.innerHTML = content.innerHTML;
-
-	for (const [key, value] of Object.entries(data)) {
-		if (sibylImportedDependencies.has(key)) {
-			continue;
-		}
-		sibylImportedDependencies.add(key);
-		if (value.type === "STYLE") {
-			const style = document.createElement("style");
-			style.href = value.path;
-			document.head.appendChild(style);
-		}
-		else if (value.type === "SCRIPT") {
-			const script = document.createElement("script");
-			script.src = value.path;
-			script.defer = true;
-			document.body.appendChild(script);
-		}
-	}
 
 	const script = doc.querySelector("body>script");
 	if (script) {
@@ -104,27 +86,23 @@ function requestPageChange(href) {
 	const promises = [];
 	const requirements = sibylPartialsPages[href];
 
-	for (const requirement of requirements["scripts"]) {
-		// create a script element from the requirement
-		const temp = document.createElement("div");
-		temp.innerHTML = requirement;
-		const script = temp.firstChild;
-		if (document.querySelector(`script[src="${script.src}"]`)) {
+	for (const [key, value] of Object.entries(requirements)) {
+		if (sibylImportedDependencies.has(key) || key === "locale" || key === "layout") {
 			continue;
 		}
-		document.body.appendChild(script);
-		promises.push(awaitScript(script));
-	}
-
-	for (const requirement of requirements["styles"]) {
-		// create a link element from the requirement
-		const temp = document.createElement("div");
-		temp.innerHTML = requirement;
-		const link = temp.firstChild;
-		if (document.querySelector(`link[href="${link.href}"]`)) {
-			continue;
+		sibylImportedDependencies.add(key);
+		if (value.type === "STYLE") {
+			const style = document.createElement("style");
+			style.href = value.path;
+			document.head.appendChild(style);
 		}
-		document.head.appendChild(link);
+		else if (value.type === "SCRIPT") {
+			const script = document.createElement("script");
+			script.src = value.path;
+			script.defer = true;
+			document.head.appendChild(script);
+			promises.push(awaitScript(script));
+		}
 	}
 	
 	fetch(`${href}partial.html`)
@@ -139,15 +117,20 @@ function requestPageChange(href) {
 function onLinkClick(e) {
 	const el = e.target;
 	const href = standardizeLink(el.href);
-	const locale = document.getElementById("locale").innerText;
-	const layout = document.getElementById("layout").innerText;
+	const locale = document.getElementById("locale").innerText.replace(/\s/g, "");
+	const layout = document.getElementById("layout").innerText.replace(/\s/g, "");
 	
 	if (href == window.location.href) {
+		e.preventDefault()
+		console.log("WTF")
 		return;
 	}
 
-	const requirements = sibylPartialsPages[href];	
+	const requirements = sibylPartialsPages[href];
+	console.log(requirements, locale, layout, requirements['locale'], requirements['layout'])
+
 	if (!requirements || requirements['locale'] != locale || requirements['layout'] != layout) {
+		e.preventDefault()
 		return;
 	}
 
@@ -158,8 +141,9 @@ function onLinkClick(e) {
 }
 
 function getPages() {
-	const locale = document.getElementById("locale").innerText;
+	const locale = document.getElementById("locale").innerText.replace(/\s/g, "");
 	const links = [];
+	console.log(`a[href^="/${locale}"]`)
 	const linkElements = document.querySelectorAll(`a[href^="/${locale}"]`);
 	for (const link of linkElements) {
 		links.push(link.href);
@@ -200,6 +184,7 @@ window.addEventListener('load', function() {
 	document.querySelectorAll('a[href^="#"]')
 	.forEach(anchor => anchor.addEventListener('click', smoothScroll));
 	getPages();
+	console.log("SUCCESS")
 });
 window.addEventListener('unload', function() {
 	document.body.classList.add("preload");

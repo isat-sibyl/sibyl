@@ -193,7 +193,8 @@ class Build:
 				continue
 			for child in dest.find_all(recursive=False):
 				if attr == "class":
-					child["class"] = child.get("class", []).extend(self.format(x) for x in source[attr])
+					child["class"] = child.get("class", [])
+					child["class"].extend(self.format(x) for x in source["class"])
 				elif attr == "style":
 					old_style = child.get('style', "")
 					if old_style and not old_style.endswith(";"):
@@ -215,7 +216,7 @@ class Build:
 		component_soup = component.Component.build(component_path)
 
 		# get a copy of the component's template
-		template = copy.copy(component_soup.template)
+		template = component_soup.template
 
 		old_context = {**self.context}
 
@@ -288,7 +289,6 @@ class Build:
 		self.perform_replacements(page.template)
 
 		for tag in page.template.find_all("requirement"):
-			print(tag)
 			tag.extract()
 
 		# Step 4: Build the partial for this page
@@ -312,7 +312,10 @@ class Build:
 		requirements_path = os.path.join(self.settings.build_path, relative_page_path, "partial.requirements.json")
 		os.makedirs(os.path.dirname(requirements_path), exist_ok=True)
 		with open(requirements_path, "w") as requirements_file:
-			requirements_file.write(json.dumps({Build.kebab_to_camel(x.name) : x.to_dict() for x in self.requirements}))
+			requirements = {Build.kebab_to_camel(x.name) : x.to_dict() for x in self.requirements}
+			requirements["locale"] = self.context["SIBYL_LOCALE"]
+			requirements["layout"] = page.template["layout"]
+			requirements_file.write(json.dumps(requirements))
 
 		# Step 6: Inject page into layout (found in the layout attribute of the template)
 		
@@ -421,7 +424,7 @@ class Build:
 		for locale in self.locales:
 			if locale != "global":
 				locale_path = os.path.join(self.build_files_path, locale)
-				shutil.copytree(self.settings.pages_path, locale_path)
+				shutil.copytree(self.settings.pages_path, locale_path, dirs_exist_ok=True)
 		
 		# Step 8: Add locales to context
 		self.context["SIBYL_LOCALES"] = self.locales

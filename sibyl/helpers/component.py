@@ -19,7 +19,7 @@ class Component:
 	script : bs4.Tag
 	pythons : bs4.Tag
 
-	cache : dict[str, Self] = {}
+	cache : dict[str, Self] = {} # unused since it had weird interactions with bs4
 
 	def __init__(self, file):
 		"""Load the component from a file."""
@@ -39,10 +39,7 @@ class Component:
 	@staticmethod
 	def build(file : str, no_cache = False) -> Self:
 		"""Build a component from a file. If the component is already loaded, return the loaded component."""
-		if not no_cache and file in Component.cache:
-			return Component.cache[file]
 		component = Component(file)
-		Component.cache[file] = component
 		return component
 
 	@staticmethod
@@ -71,17 +68,21 @@ class Component:
 		"""Return the name of the requirement."""
 		return "component" + self.name
 
-	def build_requirement(self, file, component_path):
+	def build_requirement(self, file, settings : settings.Settings):
 		output_path = os.path.join(settings.build_path, file)
 		if os.path.exists(output_path):
 			return
 		os.makedirs(os.path.dirname(output_path), exist_ok=True)
 		with open(output_path, "w+", encoding="utf-8") as file:
-			file.write(self.style.text)
+			if output_path.endswith(".css"):
+				file.write(self.style.text)
+			elif output_path.endswith(".js"):
+				file.write(self.script.text)
 	
 	def get_self_requirements(self, settings : settings.Settings):
 		result = []
 		base_req_file = self.file.replace(os.environ["SIBYL_PATH"], settings.cdn_url).replace("\\", "/")
+		
 		if self.style:
 			style_req_file = base_req_file.replace(".html", ".css")
 			result.append(
@@ -105,9 +106,10 @@ class Component:
 			if os.environ["SIBYL_PATH"] in component_path or not base_req_file.startswith(component_path):
 				continue
 			if self.style:
-				self.build_requirement(style_req_file, component_path)
+				self.build_requirement(style_req_file, settings)
 			if self.script:
-				self.build_requirement(script_req_file, component_path)
+				self.build_requirement(script_req_file, settings)
+			break
 			
 		return result
 
