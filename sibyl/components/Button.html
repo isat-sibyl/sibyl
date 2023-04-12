@@ -1,21 +1,34 @@
 <template>
-	<If condition="href">
-		<a class="button shadow text-shadow" style="padding: 15px 40px;" href="{{href}}" rel="noreferrer noopener" target="_blank"><Slot>{{label}}</Slot></a>
-	</If>
-	<Else condition="page">
-		<a class="button shadow text-shadow" style="padding: 15px 40px;" href="{{ROOT}}{{page}}"><Slot>{{label}}</Slot></a>
-	</Else>
+	<a render-if="href" class="button shadow" href="{{href}}" rel="noreferrer noopener" target="_blank">
+		<Component render-if="iconLeft" name="Icon" icon="{{iconLeft}}" style="margin-right: 10px" />
+		<Slot>{{label}}</Slot>
+		<Component render-if="iconRight" name="Icon" icon="{{iconRight}}" style="margin-left: 10px" />
+	</a>
+	<a render-elif="page" class="button shadow" href="{{SIBYL_ROOT}}{{page}}">
+		<Component render-if="iconLeft" name="Icon" icon="{{iconLeft}}" style="margin-right: 10px;" />
+		<Slot>{{label}}</Slot>
+		<Component render-if="iconRight" name="Icon" icon="{{iconRight}}" style="margin-left: 10px" />
+	</a>
 </template>
 
 <style>
 	.button {
-		font-size: 1.3em;
-		background-color: var(--accent-half);
+		display: flex;
+		align-items: center;
+		background-color: var(--primary);
 		color: #ededed;
 		text-decoration: none;
 		transition: 0.3s;
 		font-weight: bold;
 		text-align: center;
+		border-radius: 10px;
+		padding: 10px 20px;
+		margin: 3px;
+		text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.60);
+	}
+
+	.button>* {
+		filter: drop-shadow(1px 1px 5px rgba(0, 0, 0, 0.60));
 	}
 
 	.button:hover {
@@ -24,7 +37,7 @@
 	}
 
 	.button.secondary {
-		background-color: var(--accent-half);
+		background-color: var(--secondary);
 	}
 
 	/* smaller font size under 375px */

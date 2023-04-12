@@ -1,15 +1,13 @@
 <template>
-	<footer style="background-color: var(--footer-bg); color: var(--footer-color); gap: 10px; padding-top: 30px; border-top: 2px solid var(--accent-secondary-transition)">
-		<div class="row ca fw vca" style="gap: 20px">
-			<Component name="Social" />
+	<footer style="background-color: var(--footer-bg); color: var(--footer-color); gap: 20px; padding: 30px; border-top: 2px solid var(--accent-secondary-transition)">
+		<div class="flex row ca vca fw" style="gap: 5px;">
+			<Component for-each="social in socials" name="Social" icon="{{social['icon']}}" url="{{social['url']}}"/>
 		</div>
-		<div class="flex row" style="margin-top: 15px">
-			<For each="letter in helpMail">
-				<span>{{letter}}</span>
-			</For>
+		<div class="flex row">
+			<span for-each="letter in helpMail">{{letter}}</span>
 		</div>
 		<a href="https://sibyl.dev" target="_blank" rel="noreferrer noopener" class="row vca gutter-sm">
-			<span class="flex row vca" style="font-size: 1.5em; font-weight: 600; margin: 20px">Powered by <img src="/sibyl.svg" height="30" width="30" alt="" style="margin-left: 8px; margin-right: 4px;"> Sibyl</span>
+			<span class="flex row vca" style="font-size: 1.1em; font-weight: 600;">Powered by <img src="/sibyl.svg" height="30" width="30" alt="" style="margin-left: 8px; margin-right: 4px;"> Sibyl</span>
 		</a>
 	</footer>
 </template>
