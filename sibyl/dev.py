@@ -8,7 +8,7 @@ from threading import Thread
 from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEventHandler
 from . import build
-from .helpers import settings
+from .helpers import settings as settings_module
 import socketserver
 import websockets
 from websockets.server import serve
@@ -16,7 +16,7 @@ import signal
 
 
 connected = set()
-settings = settings.Settings()
+settings = settings_module.Settings()
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,7 +39,7 @@ async def send_reload_signal():
 class Handler(FileSystemEventHandler):
 	"""A watchdog event handler that rebuilds the site on file changes."""
 	def on_modified(self, event):
-		if event.src_path != "." and not event.src_path.startswith(".\\" + settings['BUILD_PATH']) and not event.src_path.startswith(".\\Lib") and not event.src_path.startswith(".\\Script"):
+		if event.src_path != "." and not event.src_path.startswith(".\\" + settings.build_path) and not event.src_path.startswith(".\\Lib") and not event.src_path.startswith(".\\Script"):
 			logging.info("File " + event.src_path + " has been modified, rebuilding...")
 			try_build()
 			asyncio.run(send_reload_signal())
@@ -47,7 +47,7 @@ class Handler(FileSystemEventHandler):
 class RequestHandler(SimpleHTTPRequestHandler):
 	"""A request handler that adds cache-control headers to all responses."""
 	def __init__(self, *args, **kwargs):
-		super().__init__(*args, directory=settings['BUILD_PATH'], **kwargs)
+		super().__init__(*args, directory=settings.build_path, **kwargs)
 
 	def end_headers(self):
 		self.send_my_headers()
@@ -61,7 +61,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 	def do_GET(self):
 		if self.path == "/":
 			self.send_response(302)
-			self.send_header("Location", "/" + settings["DEFAULT_LOCALE"] + "/")
+			self.send_header("Location", "/" + settings.default_locale + "/")
 			self.end_headers()
 		else:
 			SimpleHTTPRequestHandler.do_GET(self)
@@ -87,7 +87,7 @@ async def handler(websocket : websockets.WebSocketServerProtocol):
 
 async def run_ws_server(stop_event : asyncio.Event, stopped : asyncio.Event):
 	"""Run the websocket server."""
-	server = await serve(handler, "localhost", settings['WEBSOCKETS_PORT'])
+	server = await serve(handler, "localhost", settings.websockets_port)
 	await stop_event.wait()
 	server.close()
 	await server.wait_closed()
@@ -98,7 +98,7 @@ async def main(terminate : asyncio.Event):
 	stop_event = asyncio.Event()
 	stopped = asyncio.Event()
 	ws_server = asyncio.create_task(run_ws_server(stop_event, stopped))
-	logging.info("Serving websocket server at port " + str(settings['WEBSOCKETS_PORT']) + "...")
+	logging.info("Serving websocket server at port " + str(settings.websockets_port) + "...")
 
 	observer = Observer()
 	observer.schedule(Handler(), ".", recursive=True) # watch the local directory
@@ -106,11 +106,11 @@ async def main(terminate : asyncio.Event):
 	logging.info("Watching for file changes...")
 	try_build()
 
-	httpd = socketserver.ThreadingTCPServer(("", settings['DEV_PORT']), RequestHandler) 
-	logging.info("Serving files at port " + str(settings['DEV_PORT']) + "...")
-	if settings['OPEN_BROWSER']:
+	httpd = socketserver.ThreadingTCPServer(("", settings.dev_port), RequestHandler) 
+	logging.info("Serving files at port " + str(settings.dev_port) + "...")
+	if settings.open_browser:
 		logging.info("Opening browser...")
-		webbrowser.open("http://localhost:" + str(settings['DEV_PORT']) + "/")
+		webbrowser.open("http://localhost:" + str(settings.dev_port) + "/")
 	static_server = Thread(target=httpd.serve_forever)
 	static_server.start()
 
