@@ -1,208 +1,180 @@
-from datetime import date
-import glob
-
+import copy
 import json
-import re
-import time
-from xml.etree.ElementTree import ParseError
+import logging
 import os
 import shutil
-import logging
+import time
+from .helpers import settings as settings_module, component, requirement
+import bs4
 
-from bs4 import BeautifulSoup, Tag
-import yaml
+no_var_attributes = ["for-each", "render-if", "render-elif", "render-else"]
+passable_component_attributes = ["id", "class", "style"]
 
-var_pattern = re.compile(r"{{\s*([^\s{}]+)\s*(\|\s*(\S+)\s*)?}}")
+logging.basicConfig(level=logging.DEBUG)
 
-def load_settings():
-	"""Load the settings from settings.yaml."""
-	with open("settings.yaml", "r", encoding="utf-8") as file:
-		result = yaml.safe_load(file)
-		for key, value in result.items():
-			if isinstance(value, str):
-				result[key] = value.replace("SIBYL_PATH", os.path.dirname(__file__))
-			elif isinstance(value, list):
-				for i in range(len(value)):
-					if isinstance(value[i], str):
-						value[i] = value[i].replace("SIBYL_PATH", os.path.dirname(__file__))
+class dotdict(dict):
+	"""dot.notation access to dictionary attributes"""
+	__getattr__ = dict.get
+	__setattr__ = dict.__setitem__
+	__delattr__ = dict.__delitem__
 
-		return result
+class Build:
+	"""A class to build the site."""
 
-class Parser:
-	def get_debug_location(self):
-		result = self.context.get('PATH', 'PATH NOT FOUND') + " " + str(self.context["LOCATION"])
-		return result
-		
-	def resolve_var(self, string):
-		"""Resolve a variable from the context. Resolves all nested variables.
-		Returns None if the variable is not found.
-		Raises ParseError if the variable is a string and cannot have further nested variables."""
-		split = string.split(".", 1)
-		result = self.context
-		while True:
-			result = result.get(split[0], None)
-			if result is None:
-				return None
-			elif len(split) == 1:
-				return result
-			elif isinstance(result, str):
-				raise ParseError(string + " resolved to string and cannot have further nested variables. At " + self.get_debug_location())
-			split = split[1].split(".", 1)
-	
-	def get_var(self, match):
-		"""Get a variable from the context. Returns the variable if found, otherwise returns the original string."""
-		result = self.resolve_var(match.group(1))
-		if result is None:
-			result = match.group(3)
-		if result is None:
-			return "{{" + match.group(1) + "}}"
-		return str(result)
+	settings : settings_module.Settings
+	context = {}
+	locales : list[str] = []
+	exec_path = os.path.dirname(__file__)
+	build_files_path : str
+	debug_path : list[str] = []
+	debug_line : int = 0
+	debug_tag : str = ""
+	requirements : set[requirement.Requirement] = set()
+	page_count = 0
+	locale_count = 0
 
-	def replace_var(self, string):
-		"""Replace all variables in a string with their values from the context."""
-		while re.search(var_pattern, string) is not None: # This might have performance issues since it's treating the whole page as a single string
-			new_string = re.sub(var_pattern, self.get_var, string)
-			if new_string == string:
-				break
-			string = new_string
-		return string
-	
-	def find_by_attribute(self, value):
-		"""Check if a value is a string or list that contains a variable."""
+	def evaluate(self, condition : str, ignore_errors=False):
+		"""Evaluates the given condition and returns its value"""
 		try:
-			return re.match(var_pattern, value)
-		except TypeError: # is list
-			for v in value:
-				return re.match(var_pattern, v)
-	
-	def vars_replacement(self, element):
-		"""
-			Replace all variables in an element and its descendants.
-			Variables are replaced in the following places:
-			- text contents
-			- attribute values
-		"""
-		# replace all text contents
-		variables = element.find_all(string = var_pattern)
-		for variable in variables:
-			variable.replace_with(self.replace_var(variable.string))
+			context = self.context.copy()
+			# convert every dict in context to a dotdict
+			for key, value in context.items():
+				if isinstance(value, dict):
+					context[key] = dotdict(value)
+			return eval(condition, context)
+		except:
+			if not ignore_errors:
+				logging.error(f"Error evaluating '{condition}' at or near line {self.debug_line}: {' -> '.join(self.debug_path)}")
+				logging.debug(f"Context: {self.context}")
+			raise
 		
-		# replace all attribute values for all descendants
-		variables = element.find_all(lambda x: any(self.find_by_attribute(value) for value in x.attrs.values()))
-		for variable in variables:
-			# replace all attribute values
-			for key, value in variable.attrs.items():
-				try:
-					variable[key] = self.replace_var(value)
-				except TypeError: # is list
-					variable[key] = [self.replace_var(v) for v in value]
+		
+	def format(self, string : str):
+		"""Formats the given string, evaluating all text inside {{}}"""
+		result = ""
+		if string is None:
+			return result
+		while True:
+			start = string.find("{{")
+			if start == -1:
+				result += string
+				break
+			end = string.find("}}", start)
+			if end == -1:
+				raise ValueError("Missing }}")
+			result += string[:start]
+			try:
+				result += str(self.evaluate(string[start + 2:end]))
+			except (NameError, AttributeError):
+				logging.warning(f"Variable '{string[start + 2:end]}' not found at or near line {self.debug_line}: {' -> '.join(self.debug_path)}")
+				logging.debug(f"Context: {self.context}")
+				if self.settings.treat_warnings_as_errors:
+					raise NameError(f"Variable '{string[start + 2:end]}' not found at or near line {self.debug_line}: {' -> '.join(self.debug_path)}")
+				result += string[start:end+2]
+			string = string[end + 2:]
+		return result
 
-
-	def from_kebab_to_camel(self, kebab_str):
-		"""Convert a kebab-case string to camelCase."""
-		components = kebab_str.split('-')
+	@staticmethod
+	def kebab_to_camel(string : str):
+		"""Converts a kebab-case string to camelCase."""
+		components = string.split('-')
 		return components[0] + ''.join(x.title() for x in components[1:])
 
-	def get_component_path(self, name):
-		# ensure that the component exists
-		for path in self.settings["COMPONENTS_PATH"]:
-			if os.path.isfile(os.path.join(path, name + ".html")):
-				return path
-		raise ParseError("Component " + name + " not found. At " + self.get_debug_location())
+	@staticmethod
+	def is_else_tag(tag : bs4.Tag):
+		"""Returns true if the given tag is a render-else tag."""
+		return tag is not None and isinstance(tag, bs4.Tag) and ("render-else" in tag.attrs or "render-elif" in tag.attrs)
+
+	def replace_condition(self, tag : bs4.Tag):
+		condition = None
+		if "render-if" in tag.attrs:
+			condition = tag.attrs["render-if"]
+			attr_name = "render-if"
+		elif "render-elif" in tag.attrs:
+			condition = tag.attrs["render-elif"]
+			attr_name = "render-elif"
+		elif "render-else" in tag.attrs:
+			del tag["render-else"]
+			return True
+
+		self.debug_line = tag.sourceline
+
+		if condition is None:
+			raise ValueError("Missing condition")
+		# if the condition is true, remove the attribute and continue
+		try:
+			result = self.evaluate(condition, True)
+		except NameError:
+			result = False
+		if result:
+			del tag[attr_name]
+			next_tag = tag.find_next_sibling()
+			while Build.is_else_tag(next_tag):
+				next_next_tag = next_tag.find_next_sibling()
+				next_tag.__visited = True
+				next_tag.extract()
+				next_tag = next_next_tag
+			return True
+
+		next_tag = tag.find_next_sibling()
+		# delete the tag and all its children
+		tag.extract()
+		tag.__visited = True
+
+		if Build.is_else_tag(next_tag):
+			self.replace_condition(next_tag)
+
+		return False
 	
-	def process_attrs(self, tag : Tag, first_child : Tag):
-		"""Process the attributes of a component tag."""
-		for key, value in tag.attrs.items():
-			if key == "name":
-				continue
-			elif key == "style":
-				# append to existing style
-				old_style = first_child.get('style', "")
-				if old_style and not old_style.endswith(";"):
-					old_style += ";"
-				first_child['style'] = old_style + value
-			elif key == "id":
-				# replace existing id
-				first_child['id'] = value
-			elif key == "class":
-				# append to existing class
-				old_class = first_child.get('class', [])
-				first_child['class'] = old_class + value
-			elif value.startswith == "{{" and value.endswith == "}}":
-				# add variable to component's context
-				self.context[self.from_kebab_to_camel(key)] = var_pattern.match(value).group(1)
-			else:
-				# add literal to component's context
-				self.context[self.from_kebab_to_camel(key)] = value
-	    
-	def components_replacement(self, tag : Tag):
-		"""Replace a component tag with the component's HTML. Returns the used styles and scripts."""
-		self.context["LOCATION"].append(tag["name"])
-		
-		path = self.get_component_path(tag["name"])
-		
-		component_soup = BeautifulSoup(open(os.path.join(path, tag["name"] + ".html"), encoding = 'utf-8'), 'html.parser')
-		first_child = component_soup.find("template").find()
+	def expand_for(self, tag : bs4.Tag):
+		"""Expands the for-each tag."""
+		self.debug_line = tag.sourceline
+		# get the for-each attribute
+		for_each = tag["for-each"]
+		# get the name of the variable
+		(var_name, list_name) = for_each.split(" in ")
+		# get the list
+		iterable = self.evaluate(list_name)
+		old_value = self.context.get(var_name)
 
-		required_styles = set()
-		required_scripts = set()
+		del tag["for-each"]
+		
+		for item in reversed(iterable):
+			new_tag = copy.copy(tag)
+			self.context[var_name] = item
+			tag.insert_after(new_tag)
 
-		old_context = self.context
-		self.context = {**self.context}
-
-		if self.component_depth > self.settings["MAX_COMPONENT_NESTING"]:
-			raise ParseError("Component " + tag["name"] + " is too deeply nested, aborting build.")
-		self.component_depth += 1
-
-		self.process_attrs(tag, first_child)
+			self.perform_replacements(new_tag)
 		
-		for component in component_soup.find_all("component"):
-			(styles, scripts) = self.components_replacement(component)
-			required_styles.update(styles)
-			required_scripts.update(scripts)
-		
-		template = component_soup.find("template")
-
-		# replace all for loops
-		match = template.find("for")
-		while match is not None:
-			self.repeat_replacement(match)
-			match = template.find("for")
-		
-		match = template.find("if")
-		while match is not None:
-			self.conditional_replacement(match)
-			match = template.find("if")
-		
-		self.slots_replacement(component_soup, tag, component=True)
-		self.vars_replacement(template)
-		
-		tag.insert_after(*template.contents)
 		tag.extract()
 
-		self.context = old_context
-		self.component_depth -= 1
-
-		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], 'components', tag["name"] + ".css")):
-			required_styles.add(Tag(name="link", attrs={"rel": "stylesheet", "href": "/" + 'components' + "/" + tag["name"] + ".css"}, can_be_empty_element=True))
-		if os.path.exists(os.path.join(self.settings["BUILD_PATH"], 'components', tag["name"] + ".js")):
-			required_scripts.add(Tag(name="script", attrs={"src": "/" + 'components' + "/" + tag["name"] + ".js", "defer" : True}))
-		
-		self.context["LOCATION"].pop()
-
-		return (required_styles, required_scripts)
+		self.context[var_name] = old_value
 	
-	def slots_replacement(self, template_soup, page_soup, component=False):
-		"""Replace all slots in a template with the passed contents, if available."""
-		for slot in template_soup.find_all("slot"): # Replace slots
-			if slot.get("name") is None:
-				slot['name'] = "default"
-			self.context["LOCATION"].append(slot["name"])
-
-			if component and slot["name"] == "default":
-				replacement = page_soup
+	def expand_variables(self, template : bs4.Tag):
+		"""Expands the variables in the given template. A variable is inside {{}} and can be inside an attribute except the attributes in no_var_attributes."""
+		for attr in template.attrs:
+			if attr not in no_var_attributes:
+				# if the attribute is a list
+				if isinstance(template[attr], list):
+					template[attr] = [self.format(value) for value in template[attr]]
+				else:
+					template[attr] = self.format(template[attr])
+		for tag in template.contents:
+			if isinstance(tag, bs4.Comment):
+				tag.extract()
+			elif isinstance(tag, bs4.NavigableString) and not isinstance(tag, bs4.Doctype):
+				tag.replace_with(self.format(str(tag)))
+	
+	def replace_slots(self, tag : bs4.Tag, template : bs4.Tag):
+		"""Replaces the slots in the given template."""
+		slots = template.find_all("slot")
+		
+		# replace slots
+		for slot in slots: # Replace slots
+			if slot.get("name") is None or slot["name"] == "default":
+				replacement = tag
 			else:
-				replacement = page_soup.find(slot["name"].lower())
+				replacement = tag.find(slot["name"].lower())
 			if replacement is not None:
 				replacement = replacement.contents
 			if not replacement: # if the page doesn't override the slot, use the slot's contents
@@ -210,337 +182,285 @@ class Parser:
 			
 			slot.insert_after(*replacement) # replace slot with contents
 			slot.extract()
-			
-			self.context["LOCATION"].pop()
 	
-	def conditional_replacement(self, tag : Tag):
-		"""Conditionally replace a tag with its contents."""
-		self.context["LOCATION"].append("If " + tag.get("condition"))
-		remaining = None
-		condition = tag.get("condition")
-		negative = condition.startswith("!")
-
-		if negative:
-			condition = condition[1:]
-
-		if bool(self.resolve_var(condition)) != negative:
-			remaining = tag.find_next_sibling()
-			tag.insert_after(*tag.contents)
-			tag.extract()
-		else:
-			# check if next tag is an else tag
-			next_tag = tag.find_next_sibling()
-			tag.extract()
-			while next_tag is not None and next_tag.name == "else":
-				condition = next_tag.get("condition")
-				negative = condition is not None and condition.startswith("!")
-				if negative:
-					condition = condition[1:]
-				if condition is None or bool(self.resolve_var(condition)) != negative:
-					remaining = next_tag.find_next_sibling()
-					next_tag.insert_after(*next_tag.contents)
-					next_tag.extract()
-					break
+	def pass_attributes(self, source : bs4.Tag, dest : bs4.Tag): #NOSONAR
+		"""Passes the attributes from the source tag to the destination tag."""
+		for attr in source.attrs:
+			if attr in no_var_attributes:
+				continue
+			if attr not in passable_component_attributes:
+				self.context[Build.kebab_to_camel(attr)] = self.format(source[attr])
+				continue
+			for child in dest.find_all(recursive=False):
+				if attr == "class":
+					child["class"] = child.get("class", []).extend(self.format(x) for x in source[attr])
+				elif attr == "style":
+					old_style = child.get('style', "")
+					if old_style and not old_style.endswith(";"):
+						old_style += ";"
+					child['style'] = old_style + self.format(source[attr])
 				else:
-					next_candidate = next_tag.find_next_sibling()
-					next_tag.extract()
-					next_tag = next_candidate
-		while remaining is not None and remaining.name == "else":
-			next_candidate = remaining.find_next_sibling()
-			remaining.extract()
-			remaining = next_candidate
-		
-		self.context["LOCATION"].pop()
-		
-	def repeat_replacement(self, tag : Tag):
-		"""Replace a for loop with the contents repeated."""
-		self.context["LOCATION"].append("For " + tag["each"])
-		[each, of] = tag.get("each", "x in []").split(" in ")
-		if not of:
-			raise ParseError("Invalid syntax in for tag, no each specified")
-		old_context = self.context
-		self.context = {**self.context}
-		if of.startswith("[") and of.endswith("]"): # allow passing arrays
-			var = json.loads(of)
-		else:
-			var = self.resolve_var(of)
-		if isinstance(var, str) and var.isdigit():
-			var = [*range(int(var))]
+					child[attr] = self.format(source[attr])
 
-		if var is not None:
-			template = "\n".join([str(x) for x in tag.contents]) # turn the contents of the tag into a string
-			index = 0
-			to_add = []
-			for item in var:
-				self.context[each] = item
-				self.context["INDEX"] = index
-				
-				new_tag = BeautifulSoup(self.replace_var(template), 'html.parser')
+	def replace_component(self, tag : bs4.Tag):
+		"""Replaces the component tag with the component's template."""
+		self.debug_line = tag.sourceline
+		self.debug_path.append(tag["name"] + " (Component)")
 
-				match = new_tag.find("for")
-				while match is not None:
-					self.repeat_replacement(match)
-					match = new_tag.find("for")
-				
-				to_add.append(new_tag)
-				index += 1
-			prev = tag
-			for item in to_add:
-				last = item.contents[-1]
-				prev.insert_after(*item.contents)
-				prev = last
-		tag.extract()
+		# get the component's name
+		component_name = tag["name"]
+		# get the component's path
+		component_path = component.Component.resolve_component(component_name, self.settings)
+		# get the component
+		component_soup = component.Component.build(component_path)
+
+		# get a copy of the component's template
+		template = copy.copy(component_soup.template)
+
+		old_context = {**self.context}
+
+		# add the component's attributes to the template
+		self.pass_attributes(tag, template)
+		
+		self.replace_slots(tag, template)
+		
+		for child in template.find_all(recursive=False):
+			self.perform_replacements(child)
+		
+		self.requirements.update(component_soup.get_requirements(self.settings))
+
+		tag.replace_with(*template.contents)
 
 		self.context = old_context
-		self.context["LOCATION"].pop()
+		self.debug_path.pop()
 	
-	def build_partial(self, template_soup : Tag, output_path):
-		"""Replace all variables and components in a template."""
-		required_styles = set()
-		required_scripts = set()
-		for component in template_soup.find_all("component"):
-			(styles, scripts) = self.components_replacement(component)
-			required_styles.update(styles)
-			required_scripts.update(scripts)
-		
-		match = template_soup.find("for")
-		while match is not None:
-			self.repeat_replacement(match)
-			match = template_soup.find("for")
-		
-		match = template_soup.find("if")
-		while match is not None:
-			self.conditional_replacement(match)
-			match = template_soup.find("if")
-	
-		# write to file
-		with open(output_path, "w", encoding = 'utf-8') as f:
-			f.write(self.replace_var(str(template_soup))) # write the result with replaced variables
-
-		with open(output_path + ".requirements.json", "w", encoding = 'utf-8') as f:
-			f.write(json.dumps({"styles": [str(x) for x in required_styles], "scripts": [str(x) for x in required_scripts], "layout": template_soup.find("settings")['layout'], "locale": self.context["LOCALE"]}))
-		
-		return (required_styles, required_scripts)
-	
-	def template_replacement(self, build_path, debug=False):
-		"""Replace all variables and components in a template."""
-		page_soup = BeautifulSoup(open(build_path + "index.html.temp", encoding = 'utf-8'), 'html.parser')
-		page_settings = page_soup.find("settings")
-		if page_settings is None:
-			raise ParseError("No Settings tag found in " + build_path)
-
-		for path in self.settings["LAYOUT_PATH"]:
-			if os.path.exists(os.path.join(path, page_settings['layout'] + ".html")):
-				break
-		else:
-			raise ParseError("Layout " + page_settings['layout'] + " not found")
-
-		self.build_partial(page_soup, build_path + "partial.html")		
-		shutil.copyfile(os.path.join(path, f"{page_settings['layout']}.html"), build_path + "index.html") # copy the layout and use it as a base
-		with open(build_path + "index.html", "r+", encoding = 'utf-8') as file:
-			soup = BeautifulSoup(file, 'html.parser')
-
-			self.slots_replacement(soup, page_soup)
-			
-			required_styles = set()
-			required_scripts = set()
-			
-			for component in soup.find_all("component"): # Replace components
-				(styles, scripts) = self.components_replacement(component)
-				required_styles.update(styles)
-				required_scripts.update(scripts)
-			
-			soup.find("head").extend(required_styles) # Add stylesheets to end of head
-			soup.find("body").extend(required_scripts) # Add scripts to end of body
-
-			match = soup.find("for")
-			while match is not None:
-				self.repeat_replacement(match)
-				match = soup.find("for")
-			
-			match = soup.find("if")
-			while match is not None:
-				self.conditional_replacement(match)
-				match = soup.find("if")
-			
-			style = page_soup.find("style")
-			if style is not None:
-				soup.find("head").append(style)
-			
-			script = page_soup.find("script")
-			if script is not None:
-				soup.find("body").append(script)
-			
-			if debug:
-				hot_reload_soup = BeautifulSoup(open(os.path.join(os.path.dirname(__file__), "hot-reload.html"), encoding = 'utf-8'), 'html.parser')
-				# convert soup to string
-				hot_reload_soup = str(hot_reload_soup)
-				# replace localhost:8090 with localhost:port
-				hot_reload_soup = BeautifulSoup(hot_reload_soup.replace("localhost:8090", f"localhost:{self.settings['WEBSOCKETS_PORT']}"), 'html.parser')
-				soup.find("body").append(hot_reload_soup)
-
-			file.seek(0) # move to the beginning of the file
-			file.truncate(0) # clear file
-			file.write(self.replace_var(str(soup))) # write the result with replaced variables
-		os.remove(build_path + "index.html.temp") # clean temp file
-	
-	def build_layouts(self, path):
-		"""Build all layouts."""
-		for layout in os.listdir(path):
-			self.context["LOCATION"].append(layout)
-			if os.path.isdir(layout):
-				self.build_layouts(layout)
-			else:
-				build_path = os.path.join(self.settings["BUILD_PATH"], "layouts")
-				if not os.path.exists(build_path):
-					os.makedirs(build_path)
-				shutil.copyfile(os.path.join(path, layout), os.path.join(build_path, layout))
-				self.template_replacement(build_path + "/")
-			self.context["LOCATION"].pop()
-	
-	def build_pages(self, path, debug=False):
-		"""Build all pages in a directory."""
-		for page in os.listdir(self.settings["PAGES_PATH"] + path):
-			self.context["LOCATION"].append(page)
-			self.context["PAGE"] = page.split(".")[0] if page != "index.html" else ""
-			# Recursively build pages
-			if os.path.isdir(page):
-				self.build_pages(path + page)
-			else:
-				build_path = self.settings["BUILD_PATH"] + "/"
-
-				if self.base_path: # if not home page
-					build_path += self.base_path + "/"
-
-				# If the page isn't index, make it a directory
-				if page != "index.html":
-					build_path += self.context["PAGE"] + "/"
-				
-				self.context["PATH"] = "/" + build_path.replace(self.settings["BUILD_PATH"] + "/", "")
-
-				os.makedirs(os.path.dirname(build_path), exist_ok=True) # Prepare directories
-				shutil.copyfile(f"{self.settings['PAGES_PATH']}/{page}", build_path + "index.html.temp") # Copy to a temp file
-				self.template_replacement(build_path, debug) # parse the page
-			self.context["LOCATION"].pop()
-	
-	def build_components(self, path):
-		"""Build all components in a directory."""
-		if not os.path.exists(path):
+	def perform_replacements(self, template : bs4.Tag): # TODO: Tail recursion optimization
+		"""Performs replacements in the given template and recursively in all its children."""
+		self.debug_line = template.sourceline
+		if template.__visited or not isinstance(template, bs4.Tag):
 			return
-		for component in os.listdir(path):
-			# Recursively build components
-			if os.path.isdir(component):
-				self.build_components(path + component)
-			if component.endswith(".html"):
-				soup = BeautifulSoup(open(os.path.join(path, component), encoding = 'utf-8'), 'html.parser')
+		
+		template.__visited = True
 
-				# Ensure component has a template
-				template = soup.find("template")
-				if template is None:
-					raise ParseError(f"No template tag found in {component}")
-
-				# Build style
-				style = soup.find("style")
-				if style is not None:
-					logging.debug("Building " + os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.css"))
-					style_file = open(os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.css"), "w", encoding = 'utf-8')
-					style_file.write(style.text)
-
-				# Build script
-				script = soup.find("script")
-				if script is not None:
-					logging.debug("Building " + os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.js"))
-					js_file = open(os.path.join(self.settings['BUILD_PATH'], "components", f"{component.split('.')[0]}.js"), "w", encoding = 'utf-8')
-					js_file.write(script.text)
-	
-	def add_global_context_values(self, global_context):
-		"""Add global context values to the context."""
-		global_context["YEAR"] = date.today().year
-	
-	def get_other_locales(self, locale_file):
-		"""Get a list of other locales."""
-		other_locales = []
-		for locale in os.listdir(self.settings["LOCALES_PATH"]):
-			if locale != locale_file and locale != ".global.json":
-				name = locale.split(".", 1)[0]
-				other_locales.append({"name": name, "path": f"/{name}/"})
-		return other_locales
-	
-	def initialize_locale_context(self, locale_file, global_context):
-		"""Initialize the locale context."""
-		self.locale = locale_file.split(".", 1)[0]
-		self.base_path = self.locale
-		self.context = {**global_context, **json.load(open(os.path.join(self.settings['LOCALES_PATH'], locale_file), encoding = 'utf-8'))}
-		self.context["LOCALE"] = self.locale
-		self.context["LOCATION"] = [self.locale]
-
-		self.component_depth = 0
-		if "ROOT" not in self.context:
-			self.context["ROOT"] = "/" + self.base_path
-			if self.base_path:
-				self.context["ROOT"] += "/"
-		if "LOCALES" not in self.context:
-			self.context["OTHER_LOCALES"] = self.get_other_locales(locale_file)
-	
-	def create_redirects_file(self, locale_files, default_locale):
-		"""Create a redirects file."""
-		redirects = open(os.path.join(self.settings['BUILD_PATH'], "_redirects"), "a", encoding = 'utf-8')
-		for locale_file in locale_files:
-			locale = locale_file.split(".", 1)[0]
-			redirects.write(f"/{locale}/* /{locale}/:splat 200\n")
-		redirects.write(f"/* /{default_locale}/:splat 200\n")
-
-	def build(self, debug=False):
-		"""Build the website."""
-		start_time = time.time()
-		self.settings = load_settings()
-		self.built_layouts = set()
-
-		# Prepare build directory
-		shutil.rmtree(self.settings["BUILD_PATH"] + "/", ignore_errors=True)
-		os.makedirs(self.settings["BUILD_PATH"], exist_ok=True)
-
-		sibyl_static = os.path.join(os.path.dirname(__file__), "sibyl-static")	
-
-		shutil.copytree(sibyl_static, self.settings["BUILD_PATH"] + "/", dirs_exist_ok=True)
-		shutil.copytree(self.settings["STATIC_PATH"], self.settings["BUILD_PATH"] + "/", dirs_exist_ok=True)
-
-		# move everything in the favicon directory to the root
-		favicon_path = os.path.join(self.settings["BUILD_PATH"], "favicon")
-		if not os.path.exists(favicon_path):
-			favicon_path = os.path.join(os.path.dirname(__file__), "static", "favicon")
+		if "render-if" in template.attrs and not self.replace_condition(template):
+			return
+		
+		if "for-each" in template.attrs:
+			self.expand_for(template)
+			return
+		
+		if template.name == "component":
+			self.replace_component(template)
+			return
+		
+		self.expand_variables(template)
+		for tag in template.find_all(recursive=False):
+			self.perform_replacements(tag)
 			
-		for file in os.listdir(favicon_path):
-			shutil.move(os.path.join(favicon_path, file), self.settings["BUILD_PATH"])
-		
-		os.makedirs(os.path.join(self.settings['BUILD_PATH'], "components"), exist_ok=True)
-		for path in reversed(self.settings["COMPONENTS_PATH"]):
-			self.build_components(path)
+	def build_page(self, page_path : str): # NOSONAR
+		"""Builds the page in the given page_path. The page_path is inside .build_files"""
+		self.debug_path.append(os.path.basename(page_path))
 
-		global_context = json.load(open(os.path.join(self.settings['LOCALES_PATH'], ".global.json"), encoding = 'utf-8'))
-		self.add_global_context_values(global_context)
-		
-		locale_files = os.listdir(self.settings['LOCALES_PATH'])
-		try:
-			locale_files.remove(".global.json")
-		except ValueError:
-			pass
-		
-		logging.info(f"Building pages for {len(locale_files)} locales...")
+		relative_page_path = page_path[len(self.build_files_path) + 1:]
 
-		for locale_file in locale_files:
-			self.initialize_locale_context(locale_file, global_context)
-			self.build_pages("/", debug)
-		
-		if not debug:
-			# move all files at */404/index.html to */404.html
-			for path in glob.glob(f"{self.settings['BUILD_PATH']}/**/404/index.html", recursive=True):
-				shutil.move(path, path.replace("\\index.html", ".html").replace("/index.html", ".html"))
-				# remove empty directories
-				shutil.rmtree(os.path.dirname(path), ignore_errors=True)
-		
-		self.create_redirects_file(locale_files, self.settings["DEFAULT_LOCALE"])
-		logging.info("Build complete in " + "{:.3f}".format(time.time() - start_time) + " seconds")
+		# remove the .html extension
+		relative_page_path = relative_page_path[:-5]
 
-if __name__ == '__main__':
-	Parser().build()
+		# if the name is index.html, remove the index.html
+		if relative_page_path.endswith("index"):
+			relative_page_path = relative_page_path[:-5]
+		
+		self.context["SIBYL_PAGE"] = os.path.join(*(relative_page_path.split(os.path.sep)[1:])).replace("\\", "/")
+
+		# Step 1: Create the directory at the build directory
+		build_page_path = os.path.join(self.settings.build_path, relative_page_path)
+		os.makedirs(os.path.dirname(build_page_path), exist_ok=True)
+
+		# Step 2: Load the page
+		page = component.Component.build(page_path, True)
+		self.requirements = set()
+		self.requirements.update(page.get_imported_requirements()) # self requirements are dealt with by partials
+
+		old_context = {**self.context}
+		page.run_python_phase(self.context, "default")
+
+		#remove all requirement tags
+		self.perform_replacements(page.template)
+
+		for tag in page.template.find_all("requirement"):
+			print(tag)
+			tag.extract()
+
+		# Step 4: Build the partial for this page
+		partial_path = os.path.join(self.settings.build_path, relative_page_path, "partial.html")
+		os.makedirs(os.path.dirname(partial_path), exist_ok=True)
+		with open(partial_path, "w") as partial_file:
+			if self.settings.debug:
+				partial_file.write(page.template.prettify())
+				if page.script:
+					partial_file.write(page.script.prettify())
+				if page.style:
+					partial_file.write(page.style.prettify())
+			else:
+				partial_file.write(str(page.template))
+				if page.script:
+					partial_file.write(str(page.script))
+				if page.style:
+					partial_file.write(str(page.style))
+		
+		# Step 5: Build the requirements for this page
+		requirements_path = os.path.join(self.settings.build_path, relative_page_path, "partial.requirements.json")
+		os.makedirs(os.path.dirname(requirements_path), exist_ok=True)
+		with open(requirements_path, "w") as requirements_file:
+			requirements_file.write(json.dumps({Build.kebab_to_camel(x.name) : x.to_dict() for x in self.requirements}))
+
+		# Step 6: Inject page into layout (found in the layout attribute of the template)
+		
+		# resolve the layout and copy it
+		if "layout" not in page.template.attrs:
+			raise ValueError("No layout specified for page " + relative_page_path)
+		layout_path = component.Component.resolve_layout(page.template["layout"], self.settings)
+
+		# load the layout
+		with open(layout_path, "r+", encoding="utf-8") as file:
+			layout_soup = bs4.BeautifulSoup(file.read(), "html.parser")
+
+			self.perform_replacements(layout_soup)
+
+			# inject the page into the layout
+			template_slot = layout_soup.find("slot", {"name" : "template"})
+			if template_slot is None:
+				raise ValueError("No template slot found in layout " + layout_path)
+			template_slot.replace_with(*page.template.contents)
+			title_slot = layout_soup.find("slot", {"name" : "title"})
+			if title_slot is None:
+				raise ValueError("No title slot found in layout " + layout_path)
+			title = page.template.get("title", None)
+			if title is not None:
+				title_slot.replace_with(page.template.get("title", ""))
+			else:
+				logging.warning("No title found for page " + relative_page_path)
+				if self.settings.treat_warnings_as_errors:
+					raise ValueError("No title found for page " + relative_page_path)
+				title_slot.replace_with(*title_slot.contents)
+
+			if page.script:
+				layout_soup.body.append(page.script)
+			if page.style:
+				layout_soup.body.append(page.style)
+			
+			# inject all the requirements
+			for req in self.requirements:
+				if req.type == requirement.RequirementType.SCRIPT:
+					layout_soup.body.append(req.to_tag())
+				elif req.type == requirement.RequirementType.STYLE:
+					layout_soup.head.append(req.to_tag())
+
+		output_path = os.path.join(self.settings.build_path, relative_page_path, "index.html")
+		os.makedirs(os.path.dirname(output_path), exist_ok=True)
+		with open(output_path, "w", encoding="utf-8") as file:
+			if self.settings.debug:
+				file.write(layout_soup.prettify())
+			else:
+				file.write(str(layout_soup))
+
+		# Step 7: Clean up
+		page.run_python_phase(self.context, "cleanup")
+		self.context = old_context
+		self.debug_path.pop()
+	
+	def build_dir(self, dir_path : str):
+		"""Build the site for a given directory."""
+		self.debug_path.append(os.path.basename(dir_path))
+		
+		for page in os.listdir(dir_path):
+			page_path = os.path.join(dir_path, page)
+			if os.path.isdir(page_path):
+				self.build_dir(page_path)
+			else:
+				self.page_count += 1
+				self.build_page(page_path)
+
+		self.debug_path.pop()
+
+	def __init__(self):
+		# Step 1: Load settings
+		self.settings = settings_module.Settings()
+
+		# Step 2: Delete build directory and re-create it
+		if os.path.exists(self.settings.build_path):
+			shutil.rmtree(self.settings.build_path)
+		os.mkdir(self.settings.build_path)
+
+		# Step 3: Copy everything from sibyl-static to the build directory
+		shutil.copytree(os.path.join(self.exec_path, "sibyl-static"), self.settings.build_path, dirs_exist_ok=True)
+
+		# Step 4: Copy everything from static to the build directory.
+		shutil.copytree(self.settings.static_path, self.settings.build_path, dirs_exist_ok=True)
+
+		# Step 5: For every folder in root-folders, move its' contents to the build directory and delete the folder
+		for folder in self.settings.root_folders:
+			shutil.copytree(os.path.join(self.settings.build_path, folder), self.settings.build_path, dirs_exist_ok=True)
+			shutil.rmtree(os.path.join(self.settings.build_path, folder))
+		
+		# Step 6: Load all the locales from settings.locales_path
+		for locale in os.listdir(self.settings.locales_path):
+			if locale == "global.json":
+				continue
+			if not locale.endswith(".json"):
+				raise ValueError(f"Invalid locale file '{locale}'")
+			locale = locale[:-5]
+			self.locales.append(locale)
+		
+		# Step 7: Create a folder called .build_files and create a folder for each locale there. Then, copy the contents of the pages folder to each locale's folder
+		self.build_files_path = os.path.join(self.settings.build_path, ".build_files")
+		if os.path.exists(self.build_files_path):
+			raise ValueError("The .build_files folder already exists. Please delete it and try again.")
+		os.mkdir(self.build_files_path)
+		for locale in self.locales:
+			if locale != "global":
+				locale_path = os.path.join(self.build_files_path, locale)
+				shutil.copytree(self.settings.pages_path, locale_path)
+		
+		# Step 8: Add locales to context
+		self.context["SIBYL_LOCALES"] = self.locales
+		# add everything from global.json to the context, if it exists
+		global_path = os.path.join(self.settings.locales_path, "global.json")
+
+		if os.path.exists(global_path):
+			with open(global_path, "r", encoding="utf-8") as file:
+				self.context.update(json.load(file))
+
+		base_context = self.context
+		# Step 9: For each locale, build the website
+		for locale in self.locales:
+			self.context = base_context.copy()
+			
+			# inside the locale's context
+			locale_path = os.path.join(self.settings.locales_path, locale + ".json")
+			with open(locale_path, "r", encoding="utf-8") as file:
+				self.context.update(json.load(file))
+
+			self.context["SIBYL_LOCALE"] = locale
+			self.context["SIBYL_OTHER_LOCALES"] = [l for l in self.locales if l != locale]
+			self.context["SIBYL_ROOT"] = "/" + locale + "/"
+
+			self.debug_path = []
+			try:
+				self.locale_count += 1
+				self.build_dir(os.path.join(self.build_files_path, locale))
+			except Exception as e:
+				logging.error(f"Error while building {locale}: {e}")
+				logging.error(f"Debug path: {' -> '.join(self.debug_path)}")
+				raise e
+			
+			self.context = base_context
+
+		# Step 10: Delete the .build_files folder
+		shutil.rmtree(self.build_files_path)
+
+if __name__ == "__main__":
+	# get start time
+	start = time.time()
+	r = Build()
+	logging.info(f"Built {r.page_count} pages in {r.locale_count} locales in {time.time() - start} seconds.")
