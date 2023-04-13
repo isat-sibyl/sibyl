@@ -103,7 +103,7 @@ class Component:
 				)
 			)
 		for component_path in settings.components_paths:
-			if os.environ["SIBYL_PATH"] in component_path or not base_req_file.startswith(component_path):
+			if component_path.startswith("http://") or component_path.startswith("https://"):
 				continue
 			if self.style:
 				self.build_requirement(style_req_file, settings)
