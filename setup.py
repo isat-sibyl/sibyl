@@ -17,7 +17,7 @@ setuptools.setup(
 	},
 	license='All rights reserved',
 	packages=['sibyl'],
-	package_data={'sibyl': ['components/*', 'layouts/*', 'locales/*', 'locales/.global.json', 'pages/*', 'static/*', 'sibyl-static/*', 'sibyl-static/icons/*', 'static/favicon/*', 'settings.yaml', 'hot-reload.html', 'Pipfile', 'requirements.txt']},
+	package_data={'sibyl': ['components/*', 'layouts/*', 'locales/*', 'helpers/*', 'locales/.global.json', 'pages/*', 'static/*', 'sibyl-static/*', 'sibyl-static/icons/*', 'static/favicon/*', 'settings.yaml', 'hot-reload.html', 'Pipfile', 'requirements.txt']},
 	include_package_data=True,
 	install_requires=[
 		'beautifulsoup4>=4.12.2',
