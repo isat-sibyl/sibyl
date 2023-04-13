@@ -263,7 +263,7 @@ class Build:
 			redirects.write(f"/{locale}/* /{locale}/:splat 200\n")
 		redirects.write(f"/* /{default_locale}/:splat 200\n")
 
-	def build_page(self, page_path : str): # NOSONAR
+	def build_page(self, page_path : str, hot_reloading = False): # NOSONAR
 		"""Builds the page in the given page_path. The page_path is inside .build_files"""
 		self.debug_path.append(os.path.basename(page_path))
 
@@ -364,6 +364,13 @@ class Build:
 					layout_soup.body.append(req.to_tag())
 				elif req.type == requirement.RequirementType.STYLE:
 					layout_soup.head.append(req.to_tag())
+		if hot_reloading:
+			hot_reload_soup = bs4.BeautifulSoup(open(os.path.join(os.path.dirname(__file__), "hot-reload.html"), encoding = 'utf-8'), 'html.parser')
+			# convert soup to string
+			hot_reload_soup = str(hot_reload_soup)
+			# replace localhost:8090 with localhost:port
+			hot_reload_soup = bs4.BeautifulSoup(hot_reload_soup.replace("localhost:8090", f"localhost:{self.settings['WEBSOCKETS_PORT']}"), 'html.parser')
+			layout_soup.find("body").append(hot_reload_soup)
 
 		output_path = os.path.join(self.settings.build_path, relative_page_path, "index.html")
 		os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -378,21 +385,21 @@ class Build:
 		self.context = old_context
 		self.debug_path.pop()
 	
-	def build_dir(self, dir_path : str):
+	def build_dir(self, dir_path : str, hot_reloading = False):
 		"""Build the site for a given directory."""
 		self.debug_path.append(os.path.basename(dir_path))
 		
 		for page in os.listdir(dir_path):
 			page_path = os.path.join(dir_path, page)
 			if os.path.isdir(page_path):
-				self.build_dir(page_path)
+				self.build_dir(page_path, hot_reloading)
 			else:
 				self.page_count += 1
-				self.build_page(page_path)
+				self.build_page(page_path, hot_reloading)
 
 		self.debug_path.pop()
 
-	def __init__(self): # NOSONAR
+	def __init__(self, hot_reloading = False): # NOSONAR
 		self.context = {}
 		self.locales = []
 		self.debug_path = []
@@ -466,7 +473,7 @@ class Build:
 			self.debug_path = []
 			try:
 				self.locale_count += 1
-				self.build_dir(os.path.join(self.build_files_path, locale))
+				self.build_dir(os.path.join(self.build_files_path, locale), hot_reloading)
 			except Exception as e:
 				logging.error(f"Error while building {locale}: {e}")
 				logging.error(f"Debug path: {' -> '.join(self.debug_path)}")
