@@ -23,16 +23,15 @@ class Build:
 	"""A class to build the site."""
 
 	settings : settings_module.Settings
-	context = {}
-	locales : list[str] = []
+	context : dict
+	locales : list[str]
 	exec_path = os.path.dirname(__file__)
 	build_files_path : str
-	debug_path : list[str] = []
-	debug_line : int = 0
-	debug_tag : str = ""
-	requirements : set[requirement.Requirement] = set()
-	page_count = 0
-	locale_count = 0
+	debug_path : list[str]
+	debug_line : int = -1
+	requirements : set[requirement.Requirement]
+	page_count : int
+	locale_count : int
 
 	def evaluate(self, condition : str, ignore_errors=False):
 		"""Evaluates the given condition and returns its value"""
@@ -395,7 +394,16 @@ class Build:
 
 		self.debug_path.pop()
 
-	def __init__(self):
+	def __init__(self): # NOSONAR
+		self.context = {}
+		self.locales = []
+		self.debug_path = []
+		self.debug_line = -1
+		self.requirements = set()
+		self.page_count = 0
+		self.locale_count = 0
+		start = time.time()
+
 		# Step 1: Load settings
 		self.settings = settings_module.Settings()
 
@@ -480,8 +488,8 @@ class Build:
 
 		self.create_redirects_file(self.locales, self.settings.default_locale)
 
+		logging.info(f"Built {self.page_count} pages in {self.locale_count} locales in {time.time() - start} seconds.")
+
 if __name__ == "__main__":
-	# get start time
-	start = time.time()
-	r = Build()
-	logging.info(f"Built {r.page_count} pages in {r.locale_count} locales in {time.time() - start} seconds.")
+	Build()
+	
