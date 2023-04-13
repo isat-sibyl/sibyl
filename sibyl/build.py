@@ -486,7 +486,7 @@ class Build:
 
 		if not self.settings.debug:
 			# move all files at */404/index.html to */404.html
-			for path in glob.glob(f"{self.settings['BUILD_PATH']}/**/404/index.html", recursive=True):
+			for path in glob.glob(f"{self.settings.build_path}/**/404/index.html", recursive=True):
 				shutil.move(path, path.replace("\\index.html", ".html").replace("/index.html", ".html"))
 				# remove empty directories
 				shutil.rmtree(os.path.dirname(path), ignore_errors=True)
