@@ -1,6 +1,5 @@
 from enum import Enum
 import bs4
-import re
 
 class RequirementType(Enum):
 	SCRIPT = 1
@@ -36,7 +35,7 @@ class Requirement:
 		"""Convert the requirement to a tag."""
 		path = self.path
 		# if the path isn't to an absolute URL, add a slash to the start
-		if not re.search("^[a-zA-z]+:\/", path):
+		if not path.lower().startswith("http://") and not path.lower().startswith("https://"):
 			path = "/" + path
 		if self.type == RequirementType.SCRIPT:
 			return bs4.Tag(name="script", attrs={"defer": "", "src": path})

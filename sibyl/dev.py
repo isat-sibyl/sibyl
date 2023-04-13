@@ -13,7 +13,8 @@ import socketserver
 import websockets
 from websockets.server import serve
 import signal
-
+import re
+from urllib.parse import unquote
 
 connected = set()
 settings = settings_module.Settings()
@@ -59,12 +60,25 @@ class RequestHandler(SimpleHTTPRequestHandler):
 		self.send_header("Expires", "0")
 	
 	def do_GET(self):
+		if re.search("^/[a-zA-z]+:\/", self.path) and (not self.path.lower().startswith("http://") and not self.path.lower().startswith("https://")):
+			# remove leading slash and serve the file from the absolute path specified
+			self.path = unquote(self.path[1:])
+			with open(self.path, "rb") as f:
+				self.send_response(200)
+				ctype = self.guess_type(self.path)
+				fs = os.fstat(f.fileno())
+				self.send_header("Content-type", ctype)
+				self.send_header("Content-Length", str(fs[6]))
+				self.send_header("Last-Modified",	self.date_time_string(fs.st_mtime))
+				self.end_headers()
+				self.copyfile(f, self.wfile)
+			return
 		if self.path == "/":
 			self.send_response(302)
 			self.send_header("Location", "/" + settings.default_locale + "/")
 			self.end_headers()
-		else:
-			SimpleHTTPRequestHandler.do_GET(self)
+			return
+		SimpleHTTPRequestHandler.do_GET(self)
 
 async def handler(websocket : websockets.WebSocketServerProtocol):
 	"""A websocket handler that sends a reload signal to all connected clients when a reload signal is received."""
