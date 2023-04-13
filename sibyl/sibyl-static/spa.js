@@ -1,5 +1,6 @@
 const sibylPartialsPages = {};
 const sibylImportedDependencies = new Set();
+let sibylFirstLoad = true;
 
 function smoothScroll(e) {
 	e.preventDefault();
@@ -122,12 +123,10 @@ function onLinkClick(e) {
 	
 	if (href == window.location.href) {
 		e.preventDefault()
-		console.log("WTF")
 		return;
 	}
 
 	const requirements = sibylPartialsPages[href];
-	console.log(requirements, locale, layout, requirements['locale'], requirements['layout'])
 
 	if (!requirements || requirements['locale'] != locale || requirements['layout'] != layout) {
 		e.preventDefault()
@@ -143,20 +142,22 @@ function onLinkClick(e) {
 function getPages() {
 	const locale = document.getElementById("locale").innerText.replace(/\s/g, "");
 	const links = [];
-	console.log(`a[href^="/${locale}"]`)
 	const linkElements = document.querySelectorAll(`a[href^="/${locale}"]`);
 	for (const link of linkElements) {
 		links.push(link.href);
 	}
 
-	const initialPage = standardizeLink(window.location.href);
-	sibylPartialsPages[initialPage] = false;
-	fetch(`${initialPage}partial.requirements.json`)
-	.then(handleFetchResponse)
-	.then(data => {
-		sibylPartialsPages[initialPage] = data;
-		Object.keys(data).forEach(sibylImportedDependencies.add, sibylImportedDependencies);
-	})
+	if (sibylFirstLoad) {
+		const initialPage = standardizeLink(window.location.href);
+		sibylPartialsPages[initialPage] = false;
+		fetch(`${initialPage}partial.requirements.json`)
+		.then(handleFetchResponse)
+		.then(data => {
+			sibylPartialsPages[initialPage] = data;
+			Object.keys(data).forEach(sibylImportedDependencies.add, sibylImportedDependencies);
+		})
+		sibylFirstLoad = false;
+	}
 
 	for (const link of links) {
 		const cleanLink = standardizeLink(link);
@@ -184,7 +185,6 @@ window.addEventListener('load', function() {
 	document.querySelectorAll('a[href^="#"]')
 	.forEach(anchor => anchor.addEventListener('click', smoothScroll));
 	getPages();
-	console.log("SUCCESS")
 });
 window.addEventListener('unload', function() {
 	document.body.classList.add("preload");
