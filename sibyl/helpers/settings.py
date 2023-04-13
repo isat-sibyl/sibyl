@@ -1,4 +1,5 @@
 
+import logging
 import yaml
 import os
 	
@@ -8,7 +9,7 @@ class Settings:
 	root : str = "/"
 	default_locale : str = "en"
 	open_browser : bool = True
-	debug: bool = True
+	debug: bool = False
 
 	max_component_nesting : int = 100
 	components_paths : list[str] = ["components", "{$SIBYL_PATH}/components"]
@@ -44,6 +45,8 @@ class Settings:
 			if not isinstance(value, type(getattr(self, key))):
 				raise ValueError(f"Invalid type for setting '{key}'. Expected {type(getattr(self, key))} but got {type(value)}")
 			setattr(self, key, value)
+		if self.debug:
+			logging.basicConfig(level=logging.DEBUG)
 	
 	@staticmethod
 	def replace_env_vars(var):

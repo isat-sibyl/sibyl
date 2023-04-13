@@ -11,8 +11,6 @@ import bs4
 no_var_attributes = ["for-each", "render-if", "render-elif", "render-else"]
 passable_component_attributes = ["id", "class", "style"]
 
-logging.basicConfig(level=logging.DEBUG)
-
 class dotdict(dict):
 	"""dot.notation access to dictionary attributes"""
 	__getattr__ = dict.get
