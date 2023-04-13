@@ -369,7 +369,7 @@ class Build:
 			# convert soup to string
 			hot_reload_soup = str(hot_reload_soup)
 			# replace localhost:8090 with localhost:port
-			hot_reload_soup = bs4.BeautifulSoup(hot_reload_soup.replace("localhost:8090", f"localhost:{self.settings['WEBSOCKETS_PORT']}"), 'html.parser')
+			hot_reload_soup = bs4.BeautifulSoup(hot_reload_soup.replace("localhost:8090", f"localhost:{self.settings.websockets_port}"), 'html.parser')
 			layout_soup.find("body").append(hot_reload_soup)
 
 		output_path = os.path.join(self.settings.build_path, relative_page_path, "index.html")
