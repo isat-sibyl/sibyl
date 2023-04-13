@@ -36,7 +36,7 @@ class Requirement:
 		"""Convert the requirement to a tag."""
 		path = self.path
 		# if the path isn't to an absolute URL, add a slash to the start
-		if not re.search("[a-zA-z]+:\/", path):
+		if not re.search("^[a-zA-z]+:\/", path):
 			path = "/" + path
 		if self.type == RequirementType.SCRIPT:
 			return bs4.Tag(name="script", attrs={"defer": "", "src": path})
