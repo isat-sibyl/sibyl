@@ -55,6 +55,12 @@ function changePage(data, promises) {
 			document.title = defaultTitle.innerText.replace(/\s/g, "");
 		}
 	}
+	
+	const sibylPageStyle = document.getElementById("sibyl-page-style");
+	if (sibylPageStyle) {
+		sibylPageStyle.remove();
+	}
+
 	main.innerHTML = content.innerHTML;
 
 	const script = doc.querySelector("body>script");
@@ -88,14 +94,6 @@ function requestPageChange(href) {
 		console.error('Error:', error);
 		window.href="/500";
 	});
-
-	const main = document.getElementById("main");
-	const sibylPageStyle = document.getElementById("sibyl-page-style");
-	if (sibylPageStyle) {
-		sibylPageStyle.remove();
-	}
-
-	main.innerHTML = "";
 
 	for (const [key, value] of Object.entries(requirements)) {
 		if (sibylImportedDependencies.has(key) || key === "locale" || key === "layout") {
