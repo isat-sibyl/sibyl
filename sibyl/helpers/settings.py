@@ -38,7 +38,6 @@ class Settings:
 		
 		# validate the settings. They must have the correct key and either not exist or be of the correct type
 		for key, value in result.items():
-			print(key, value)
 			if value is None:
 				continue
 			if not hasattr(self, key):

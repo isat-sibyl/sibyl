@@ -132,7 +132,13 @@ class Build:
 		# get the name of the variable
 		(var_name, list_name) = for_each.split(" in ")
 		# get the list
-		iterable = self.evaluate(list_name)
+		try:
+			iterable = self.evaluate(list_name)
+		except NameError:
+			iterable = []
+			logging.warning(f"Variable '{list_name}' not found at or near line {self.debug_line}: {' -> '.join(self.debug_path)}")
+			if self.settings.treat_warnings_as_errors:
+				raise
 		old_value = self.context.get(var_name)
 
 		del tag["for-each"]

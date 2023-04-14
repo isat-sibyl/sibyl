@@ -1,9 +1,9 @@
-DEFAULT_LOCALE: "en"
-OPEN_BROWSER: true # Whether the browser should be automatically opened when developing
+default_locale: "en"
+open_browser: true # Whether the browser should be automatically opened when developing
 
-COMPONENTS_PATH: 
+components_paths: 
   - "components"
   - "${SIBYL_PATH}/components"
-LAYOUT_PATH:
+layouts_paths:
   - "layouts"
   - "${SIBYL_PATH}/layouts"
