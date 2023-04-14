@@ -124,7 +124,7 @@ class Build:
 
 		return False
 	
-	def expand_for(self, tag : bs4.Tag):
+	def expand_for(self, tag : bs4.Tag): # NOSONAR
 		"""Expands the for-each tag."""
 		self.debug_line = tag.sourceline
 		# get the for-each attribute
@@ -145,6 +145,20 @@ class Build:
 		
 		for item in iterable:
 			new_tag = copy.copy(tag)
+			is_tuple = False
+			if isinstance(item, tuple):
+				is_tuple = True
+				item = list(item)
+
+			if isinstance(item, dict):
+				item = dotdict(item)
+			elif isinstance(item, list):
+				for i in range(len(item)):
+					if isinstance(item[i], dict):
+						item[i] = dotdict(item[i])
+
+			if is_tuple:
+				item = tuple(item)
 			self.context[var_name] = item
 			tag.insert_before(new_tag)
 			self.perform_replacements(new_tag)
