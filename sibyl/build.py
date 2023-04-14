@@ -143,17 +143,17 @@ class Build:
 
 		del tag["for-each"]
 
-		head = tag
+		to_insert = []
 		
 		for item in iterable:
 			new_tag = copy.copy(tag)
 			self.context[var_name] = item
 			self.context["FOR_INDEX"] = iterable.index(item)
-			head.insert_after(new_tag)
-			head = new_tag
+			to_insert.append(new_tag)
 
 			self.perform_replacements(new_tag)
 		
+		tag.insert_after(*to_insert)
 		tag.extract()
 
 		self.context[var_name] = old_value
