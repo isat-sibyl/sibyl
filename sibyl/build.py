@@ -318,7 +318,7 @@ class Build:
 		# Step 4: Build the partial for this page
 		partial_path = os.path.join(self.settings.build_path, relative_page_path, "partial.html")
 		os.makedirs(os.path.dirname(partial_path), exist_ok=True)
-		with open(partial_path, "w") as partial_file:
+		with open(partial_path, "w", encoding="utf-8") as partial_file:
 			if self.settings.debug:
 				partial_file.write(page.template.prettify())
 				if page.script:
