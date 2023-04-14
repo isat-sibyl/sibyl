@@ -10,5 +10,5 @@
 	"__comment" : "The following colors are used in the browser's address bar and tab and are related to the favicon",
 	"safariColor" : "#121212",
 	"msColor" : "#2d89ef",
-	"googleColor" : "#121212"
+	"chromeColor" : "#121212"
 }
