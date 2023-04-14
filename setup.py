@@ -23,6 +23,7 @@ setuptools.setup(
 		'beautifulsoup4>=4.12.2',
 		'PyYAML>=6.0',
 		'soupsieve>=2.4',
+    'typing_extensions>=4.5.0'
 	],
 	extras_require={
 		"dev": [
