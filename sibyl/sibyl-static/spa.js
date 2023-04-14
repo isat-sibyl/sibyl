@@ -59,13 +59,7 @@ function changePage(data, promises) {
 
 	const script = doc.querySelector("body>script");
 	if (script) {
-		script.id = "sibyl-page-script";
 		eval(script.innerHTML);
-	}
-
-	const sibylPageStyle = document.getElementById("sibyl-page-style");
-	if (sibylPageStyle) {
-		sibylPageStyle.remove();
 	}
 
 	const style = doc.querySelector("body>style");
@@ -86,6 +80,22 @@ function changePage(data, promises) {
 function requestPageChange(href) {
 	const promises = [];
 	const requirements = sibylPartialsPages[href];
+	
+	fetch(`${href}partial.html`)
+	.then(response => response.text())
+	.then((data) => changePage(data, promises))
+	.catch((error) => {
+		console.error('Error:', error);
+		window.href="/500";
+	});
+
+	const main = document.getElementById("main");
+	const sibylPageStyle = document.getElementById("sibyl-page-style");
+	if (sibylPageStyle) {
+		sibylPageStyle.remove();
+	}
+
+	main.innerHTML = "";
 
 	for (const [key, value] of Object.entries(requirements)) {
 		if (sibylImportedDependencies.has(key) || key === "locale" || key === "layout") {
@@ -104,15 +114,7 @@ function requestPageChange(href) {
 			document.head.appendChild(script);
 			promises.push(awaitScript(script));
 		}
-	}
-	
-	fetch(`${href}partial.html`)
-	.then(response => response.text())
-	.then((data) => changePage(data, promises))
-	.catch((error) => {
-		console.error('Error:', error);
-		window.href="/500";
-	});
+	}	
 }
 
 function onLinkClick(e) {
