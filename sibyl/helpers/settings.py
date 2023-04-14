@@ -17,7 +17,7 @@ class Settings:
 	root_folders : list[str] = ["favicon"]
 
 	pages_path : str = "pages"
-	build_path : str = "build"
+	build_path : str = "dist"
 	locales_path : str = "locales"
 	static_path : str = "static"
 

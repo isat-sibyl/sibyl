@@ -70,7 +70,7 @@ class Component:
 
 	def build_requirement(self, file, settings : settings.Settings):
 		output_path = os.path.join(settings.build_path, file)
-		if os.path.exists(output_path):
+		if os.path.exists(output_path) or output_path.startswith("http://") or output_path.startswith("https://"):
 			return
 		os.makedirs(os.path.dirname(output_path), exist_ok=True)
 		with open(output_path, "w+", encoding="utf-8") as file:
