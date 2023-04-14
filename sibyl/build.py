@@ -148,7 +148,6 @@ class Build:
 		for item in iterable:
 			new_tag = copy.copy(tag)
 			self.context[var_name] = item
-			self.context["FOR_INDEX"] = iterable.index(item)
 			to_insert.append(new_tag)
 
 			self.perform_replacements(new_tag)
