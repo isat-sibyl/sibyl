@@ -142,17 +142,13 @@ class Build:
 		old_value = self.context.get(var_name)
 
 		del tag["for-each"]
-
-		to_insert = []
 		
 		for item in iterable:
 			new_tag = copy.copy(tag)
 			self.context[var_name] = item
-			to_insert.append(new_tag)
-
+			tag.insert_before(new_tag)
 			self.perform_replacements(new_tag)
 		
-		tag.insert_after(*to_insert)
 		tag.extract()
 
 		self.context[var_name] = old_value
