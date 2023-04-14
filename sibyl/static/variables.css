@@ -1,7 +1,7 @@
 :root {
 	/* Identity */
-	--primary : #498462;
-	--secondary: #356549;
+	--primary : #348355;
+	--secondary: #b0623e;
 	--accent: #fc8853;
 	--accent-faded: #fc885344;
 	--accent-half: #fc885399;
@@ -13,26 +13,28 @@
 	--header-logo-text-color: white;
 	--header-links: white;
 	--header-links-active: var(--primary);
-	--header-links-hover: var(--secondary);
+	--header-links-hover: var(--primary);
+	--header-height: 60px;
+	--header-font-size: 0.95em;
+	--header-title-font-size: 1.1em;
+
+	--header-socials-separator: rgba(255, 255, 255, 0.3);
 
 	/* Locale */
 	--header-locale-bg: transparent;
-	--header-locale-color: white;
-	--header-locale-border: white;
+	--header-locale-color: rgba(255, 255, 255, 0.9);
+	--header-locale-border: rgba(255, 255, 255, 0.6);
 
 	/* Locale Hover */
-	--header-locale-bg-hover: white;
+	--header-locale-bg-hover: rgba(255, 255, 255, 0.9);
 	--header-locale-color-hover: black;
-	--header-locale-border-hover: white;
+	--header-locale-border-hover: rgba(255, 255, 255, 0.6);
 
 	/* Mobile Menu */
-	--mobile-menu-bg: white;
-	--hamburger-button-bg: white;
-	--hamburger-button-color: black;
+	--mobile-menu-bg: black;
+	--hamburger-button-color: white;
 
-	--hamburger-button-bg-hover: black;
 	--hamburger-button-color-hover: white;
-
 
 	/* Footer */
 	--footer-bg: black;

@@ -1,6 +1,6 @@
 <template>
 	<details class="accordion">
-		<summary>{{label | Details}}</summary>
+		<summary>{{label or "Details"}}</summary>
 		<div class="content">
 			<Slot></Slot>
 		</div>
@@ -35,7 +35,7 @@
 		border-style: solid;
 		border-color: transparent transparent transparent #fff;
 		position: absolute;
-		top: 1.15rem;
+		top: 1.35rem;
 		left: 0;
 		transform: rotate(0);
 		transform-origin: .2rem 50%;
