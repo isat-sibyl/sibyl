@@ -92,6 +92,8 @@ class Component:
 					style_req_file
 				)
 			)
+			style_build_file = self.file.replace(".html", ".css")
+			self.build_requirement(style_build_file, settings)
 			
 		if self.script:
 			script_req_file = base_req_file.replace(".html", ".js")
@@ -102,14 +104,8 @@ class Component:
 					script_req_file
 				)
 			)
-		for component_path in settings.components_paths:
-			if component_path.startswith("http://") or component_path.startswith("https://"):
-				continue
-			if self.style:
-				self.build_requirement(style_req_file, settings)
-			if self.script:
-				self.build_requirement(script_req_file, settings)
-			break
+			script_build_file = self.file.replace(".html", ".js")
+			self.build_requirement(script_build_file, settings)
 			
 		return result
 
