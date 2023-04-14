@@ -55,7 +55,7 @@ function changePage(data, promises) {
 			document.title = defaultTitle.innerText.replace(/\s/g, "");
 		}
 	}
-	
+
 	const sibylPageStyle = document.getElementById("sibyl-page-style");
 	if (sibylPageStyle) {
 		sibylPageStyle.remove();
@@ -86,6 +86,8 @@ function changePage(data, promises) {
 function requestPageChange(href) {
 	const promises = [];
 	const requirements = sibylPartialsPages[href];
+
+	dispatchEvent(new Event('prepare-unload'));
 	
 	fetch(`${href}partial.html`)
 	.then(response => response.text())
