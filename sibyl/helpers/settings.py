@@ -32,16 +32,21 @@ class Settings:
 		"""Load the settings from settings.yaml."""
 		# set env var SIBYL_PATH as os.path.dirname(__file__)
 		with open("settings.yaml", "r", encoding="utf-8") as file:
-			result = yaml.safe_load(file)
+			result = yaml.load(file, Loader=yaml.BaseLoader)
 			os.environ["SIBYL_PATH"] = os.path.dirname(os.path.dirname(__file__))
 			result = Settings.replace_env_vars(result)
 		
 		# validate the settings. They must have the correct key and either not exist or be of the correct type
 		for key, value in result.items():
+			print(key, value)
 			if value is None:
 				continue
 			if not hasattr(self, key):
 				raise ValueError(f"Invalid setting '{key}'")
+			if type(getattr(self, key)) == bool:
+				value = bool(value)
+			elif type(getattr(self, key)) == int:
+				value = int(value)
 			if not isinstance(value, type(getattr(self, key))):
 				raise ValueError(f"Invalid type for setting '{key}'. Expected {type(getattr(self, key))} but got {type(value)}")
 			setattr(self, key, value)
@@ -61,4 +66,3 @@ class Settings:
 			for i in range(len(var)):
 				var[i] = Settings.replace_env_vars(var[i])
 			return var
-						

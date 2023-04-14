@@ -1,18 +1,9 @@
-ROOT: "/"
 DEFAULT_LOCALE: "en"
-OPEN_BROWSER: true
+OPEN_BROWSER: true # Whether the browser should be automatically opened when developing
 
-MAX_COMPONENT_NESTING: 100
 COMPONENTS_PATH: 
   - "components"
   - "${SIBYL_PATH}/components"
 LAYOUT_PATH:
   - "layouts"
   - "${SIBYL_PATH}/layouts"
-  
-PAGES_PATH: "pages"
-BUILD_PATH: "dist"
-LOCALES_PATH: "locales"
-STATIC_PATH: "static"
-DEV_PORT: 8080
-WEBSOCKETS_PORT: 8091
