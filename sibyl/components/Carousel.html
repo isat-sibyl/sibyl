@@ -1,14 +1,7 @@
 <template>
 	<div class="carousel" aria-label="Gallery">
 		<ol class="carousel__viewport">
-			<li for-each="slide in slides" id="carousel__slide{{slide}}"
-				tabindex="0"
-				class="carousel__slide">
-				<div class="slide-contents">
-					<Slot name="Slide{{slide}}"></Slot>
-				</div>
-				<div class="carousel__snapper"></div>
-			</li>
+			<Slot></Slot>
 		</ol>
 		<aside class="carousel__navigation hide-on-mobile">
 			<ol class="carousel__navigation-list">
