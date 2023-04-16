@@ -9,6 +9,7 @@ from sibyl.helpers import (
     settings as settings_module,
     component,
     requirement,
+    version,
     shutil_compat,
 )
 import bs4
@@ -303,12 +304,12 @@ class Build:
         for tag in template.find_all(recursive=False):
             self.perform_replacements(tag)
 
-    def create_redirects_file(self, locales, default_locale):
+    def create_redirects_file(self):
         """Create a redirects file."""
         redirects = open(
             os.path.join(self.settings.build_path, "_redirects"), "a", encoding="utf-8"
         )
-        redirects.write(f"/ /{default_locale}\n")
+        redirects.write(f"/ /{self.settings.default_locale}\n")
 
     def build_page(self, page_path: str, hot_reloading=False):  # NOSONAR
         """Builds the page in the given page_path. The page_path is inside .build_files"""
@@ -535,6 +536,7 @@ class Build:
 
         # Step 8: Add locales to context
         self.context["SIBYL_LOCALES"] = self.locales
+        self.context["VERSION"] = version.version
         # add everything from global.json to the context, if it exists
         global_path = os.path.join(self.settings.locales_path, "global.json")
 
@@ -588,7 +590,7 @@ class Build:
                 # remove empty directories
                 shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 
-        self.create_redirects_file(self.locales, self.settings.default_locale)
+        self.create_redirects_file()
 
         logging.info(
             f"Built {self.page_count} pages in {self.locale_count} locales in {time.time() - start} seconds."
