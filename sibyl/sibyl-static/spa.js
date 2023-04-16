@@ -40,7 +40,7 @@ function changeState() {
 }
 
 function changePage(data, promises) {
-	dispatchEvent(new Event('unload'));
+	dispatchEvent(new Event('page-unload'));
 	const parser = new DOMParser();
 	const doc = parser.parseFromString(data, "text/html");
 	const content = doc.querySelector("template");
@@ -188,7 +188,7 @@ window.addEventListener('load', function() {
 	.forEach(anchor => anchor.addEventListener('click', smoothScroll));
 	getPages();
 });
-window.addEventListener('unload', function() {
+window.addEventListener('page-unload', function() {
 	document.body.classList.add("preload");
 });
 window.addEventListener('popstate', changeState);

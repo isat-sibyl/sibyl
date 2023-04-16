@@ -14,7 +14,7 @@
 			if (longestLink) longestLink.classList.add("active");
 		}
 	});
-	window.addEventListener("unload", () => {
+	window.addEventListener("page-unload", () => {
 		const active = document.querySelector(`#header-pages a.active`);
 		if (active) active.classList.remove("active");
 	});
