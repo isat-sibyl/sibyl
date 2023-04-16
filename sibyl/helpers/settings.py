@@ -22,7 +22,7 @@ class Settings:
     locales_path: str = "locales"
     static_path: str = "static"
 
-    cdn_url: str = f"https://sibyl.dev/{version}"
+    cdn_url: str = f"https://cdn.sibyl.dev/{version}"
 
     treat_warnings_as_errors: bool = False
 
