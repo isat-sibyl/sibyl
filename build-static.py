@@ -4,6 +4,7 @@ import time
 from sibyl.helpers import settings as settings_module, component
 import sibyl.build
 from sibyl.helpers.version import version
+from sibyl.helpers import shutil_compat
 
 from typing import Set
 
@@ -24,7 +25,9 @@ class BuildComponents(sibyl.build.Build):
         os.makedirs(self.settings.build_path)
 
         # Step 3: Copy everything from sibyl-static to the build directory
-        shutil.copytree("sibyl-static", self.settings.build_path, dirs_exist_ok=True)
+        shutil_compat.copytree(
+            "sibyl-static", self.settings.build_path, dirs_exist_ok=True
+        )
 
         # Step 4: Create a folder called .build_files and build
         self.build_files_path = os.path.join(self.settings.build_path, ".build_files")

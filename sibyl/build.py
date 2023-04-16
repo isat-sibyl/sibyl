@@ -5,7 +5,12 @@ import logging
 import os
 import shutil
 import time
-from sibyl.helpers import settings as settings_module, component, requirement
+from sibyl.helpers import (
+    settings as settings_module,
+    component,
+    requirement,
+    shutil_compat,
+)
 import bs4
 from typing import List, Set
 
@@ -487,20 +492,20 @@ class Build:
         os.mkdir(self.settings.build_path)
 
         # Step 3: Copy everything from sibyl-static to the build directory
-        shutil.copytree(
+        shutil_compat.copytree(
             os.path.join(self.exec_path, "sibyl-static"),
             self.settings.build_path,
             dirs_exist_ok=True,
         )
 
         # Step 4: Copy everything from static to the build directory.
-        shutil.copytree(
+        shutil_compat.copytree(
             self.settings.static_path, self.settings.build_path, dirs_exist_ok=True
         )
 
         # Step 5: For every folder in root-folders, move its' contents to the build directory and delete the folder
         for folder in self.settings.root_folders:
-            shutil.copytree(
+            shutil_compat.copytree(
                 os.path.join(self.settings.build_path, folder),
                 self.settings.build_path,
                 dirs_exist_ok=True,
@@ -526,7 +531,7 @@ class Build:
         for locale in self.locales:
             if locale != "global":
                 locale_path = os.path.join(self.build_files_path, locale)
-                shutil.copytree(
+                shutil_compat.copytree(
                     self.settings.pages_path, locale_path, dirs_exist_ok=True
                 )
 
