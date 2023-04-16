@@ -3,7 +3,7 @@ import shutil
 import time
 from sibyl.helpers import settings as settings_module, component
 import sibyl.build
-from version import version
+from sibyl.helpers.version import version
 
 
 class BuildComponents(sibyl.build.Build):

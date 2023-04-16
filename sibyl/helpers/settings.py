@@ -1,7 +1,7 @@
 import logging
 import yaml
 import os
-from version import version
+from .version import version
 
 
 class Settings:
