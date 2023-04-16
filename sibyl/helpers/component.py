@@ -9,6 +9,8 @@ else:
     from typing_extensions import Self
 from . import settings
 
+from typing import Dict
+
 
 class Component:
     """A reusable html component. It has a name, a template, style, script and python, which is code that is executed when the component is loaded."""
@@ -20,8 +22,6 @@ class Component:
     style: bs4.Tag
     script: bs4.Tag
     pythons: bs4.Tag
-
-    cache: dict[str, Self] = {}  # unused since it had weird interactions with bs4
 
     def __init__(self, file):
         """Load the component from a file."""
