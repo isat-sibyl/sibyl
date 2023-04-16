@@ -50,16 +50,16 @@
 					<div id="hamburger-bar-3"></div>
 				</label>
 			</div>
-			
+
 		</nav>
 	</header>
 </template>
 
 <style>
 	.vertical-separator {
-		height: 26px; 
-		width: 1px; 
-		background-color: var(--header-socials-separator); 
+		height: 26px;
+		width: 1px;
+		background-color: var(--header-socials-separator);
 		margin: 0 25px;
 	}
 
@@ -191,7 +191,7 @@
 			opacity: 0;
 			transform-origin: top;
 			transition: 0.3s;
-			
+
 			width: 100%;
 			box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
 		}
@@ -240,7 +240,7 @@
 		#hamburger-bar-3 {
 			transform: translateY(8px);
 		}
-		
+
 		#hamburger:checked ~ #hamburger-label #hamburger-bar-1 {
 			transform: rotate(45deg) translate(1.325px, 1.325px) scaleY(1.2);
 			width: 24px;
@@ -258,7 +258,7 @@
 </style>
 
 <script>
-	window.addEventListener("load", () => {		
+	window.addEventListener("load", () => {
 		const pages = document.querySelector("#header-pages");
 		if (pages) {
 			const links = pages.querySelectorAll("a");
@@ -277,7 +277,7 @@
 		const active = document.querySelector(`#header-pages a.active`);
 		if (active) active.classList.remove("active");
 	});
-	
+
 
 	if (
 		"IntersectionObserver" in window &&

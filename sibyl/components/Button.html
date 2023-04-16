@@ -1,22 +1,25 @@
 <template>
-	<a render-if="href" class="button shadow" href="{{href}}" rel="noreferrer noopener" target="_blank">
+	<Component name="{{'ButtonPage' if page else 'ButtonHref'}}" style="background-color: {{color}};">
 		<Component render-if="iconLeft" name="Icon" icon="{{iconLeft}}" style="margin-right: 10px" />
 		<Slot>{{label}}</Slot>
 		<Component render-if="iconRight" name="Icon" icon="{{iconRight}}" style="margin-left: 10px" />
 	</a>
-	<a render-elif="page" class="button shadow" href="{{SIBYL_ROOT}}{{page}}">
-		<Component render-if="iconLeft" name="Icon" icon="{{iconLeft}}" style="margin-right: 10px;" />
-		<Slot>{{label}}</Slot>
-		<Component render-if="iconRight" name="Icon" icon="{{iconRight}}" style="margin-left: 10px" />
-	</a>
 </template>
+
+<python>
+if not color:
+	color = 'primary'
+elif color.startswith('#') or color.startswith('rgb') or color.startswith('hsl'):
+	pass
+else:
+	color = f'var(--{color})'
+</python>
 
 <style>
 	.button {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		background-color: var(--primary);
 		color: #ededed;
 		text-decoration: none;
 		transition: 0.3s;
@@ -33,12 +36,7 @@
 	}
 
 	.button:hover {
-		color: white;
 		transform: scale(1.05);
-	}
-
-	.button.secondary {
-		background-color: var(--secondary);
 	}
 
 	/* smaller font size under 375px */

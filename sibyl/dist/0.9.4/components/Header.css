@@ -1,0 +1,201 @@
+
+	.vertical-separator {
+		height: 26px;
+		width: 1px;
+		background-color: var(--header-socials-separator);
+		margin: 0 25px;
+	}
+
+	header {
+		height: var(--header-height);
+		position: fixed;
+		color: black;
+		transition: 0.5s;
+		z-index: 10;
+		padding: 0 30px;
+		background-color: var(--header-bg);
+		border-bottom: 2px solid var(--accent-secondary-transition);
+	}
+
+	html:has(#appearing-header):not(:has(body.header-not-at-top)) header  {
+		background-color: transparent;
+		border-bottom: 2px solid transparent;
+	}
+
+	html:has(#appearing-header):not(:has(body.header-not-at-top)) header:not(:has(#hamburger:checked)) #header-pages {
+		display: none;
+	}
+
+	html:has(#appearing-header):not(:has(body.header-not-at-top)) header:not(:has(#hamburger:checked)) #header-left {
+		opacity: 0;
+	}
+
+	#nav-menu {
+		display: contents;
+	}
+
+	nav ul {
+		padding: 0;
+	}
+
+	nav ul li {
+		list-style: none;
+	}
+
+	nav ul a {
+		text-decoration: none;
+		color: var(--header-links);
+		transition: 0.2s;
+		font-weight: 500;
+		font-size: var(--header-font-size);
+		text-align: center;
+		display: flex;
+		justify-content: center;
+	}
+
+	#header-pages a {
+		border-bottom: 3px solid transparent;
+		border-top: 3px solid transparent;
+	}
+
+	#header-pages a.active {
+		border-bottom: 3px solid var(--header-links-active);
+		font-weight: bold;
+	}
+
+	#header-pages a:hover {
+		border-bottom: 3px solid var(--header-links-hover);
+		color: var(--header-links-hover);
+	}
+
+	#header-locales a:hover {
+		background-color: var(--header-locale-bg-hover) !important; /* important since other styles are inline to avoid flickering */
+		color: var(--header-locale-color-hover) !important;
+		border: 2px solid var(--header-locale-border-hover) !important;
+	}
+
+	#hamburger {
+		display: none;
+	}
+
+	#hamburger-label {
+		display: none;
+	}
+
+	#header-left {
+		transition: 0.3s;
+	}
+
+	@media only screen and (max-width: 1000px) {
+		.vertical-separator {
+			width: 50vw;
+			height: 1px;
+		}
+
+		header {
+			background-color: var(--header-bg);
+			border-bottom: 2px solid var(--accent-secondary-transition);
+		}
+
+		#header-pages {
+			display: flex;
+			margin-left: 0 !important;
+			gap: 0px !important;
+			padding-bottom: 0 !important;
+		}
+
+		#header-pages a {
+			padding: 15px !important;
+			height: fit-content !important;
+			width: 50vw;
+			display: flex;
+			justify-content: left;
+		}
+
+		#header-pages a:not(.active):not(:hover) {
+			border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+		}
+
+		#header-pages a:hover, #header-pages a.active {
+			border-bottom: 1px solid var(--primary);
+		}
+
+		#header-right {
+			flex-direction: column;
+			justify-content: left;
+			align-items: center;
+			background-color: var(--mobile-menu-bg);
+			position: fixed;
+			top: 0;
+			right: 0;
+			z-index: -1;
+			padding-top: var(--header-height);
+			transform: scaleY(0);
+			opacity: 0;
+			transform-origin: top;
+			transition: 0.3s;
+
+			width: 100%;
+			box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+			border-bottom: 2px solid var(--accent-secondary-transition);
+		}
+
+		#header-right #header-pages {
+			flex-direction: column;
+		}
+
+		#hamburger:checked ~ #header-right {
+			display: flex;
+			transform: scaleY(1);
+			opacity: 1;
+		}
+
+		#hamburger-label {
+			cursor: pointer;
+			color: var(--hamburger-button-color);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 48px;
+			width: 48px;
+			transition: 0.3s;
+			background-color: var(--header-bg);
+			border-radius: 50%;
+			box-shadow: 0px 0px 2px var(--header-bg);
+		}
+
+		#hamburger-label>*{
+			height: 2px;
+			border-radius: 5px;
+			background-color: white;
+			width: 20px;
+			transition: 0.3s;
+		}
+
+		#hamburger-bar-1 {
+			transform: translateY(-8px);
+		}
+
+		#hamburger-bar-2 {
+			width: 28px;
+		}
+
+		#hamburger-bar-3 {
+			transform: translateY(8px);
+		}
+
+		#hamburger:checked ~ #hamburger-label #hamburger-bar-1 {
+			transform: rotate(45deg) translate(1.325px, 1.325px) scaleY(1.2);
+			width: 24px;
+		}
+
+		#hamburger:checked ~ #hamburger-label #hamburger-bar-2 {
+			opacity: 0;
+		}
+
+		#hamburger:checked ~ #hamburger-label #hamburger-bar-3 {
+			transform: rotate(-45deg) translate(1.325px, -1.325px) scaleY(1.2);
+			width: 24px;
+		}
+	}

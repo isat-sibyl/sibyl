@@ -5,3 +5,4 @@ soupsieve>=2.4
 watchdog>=3.0.0
 websockets>=11.0.1
 typing_extensions>=4.5.0
+pre-commit>=3.2.2

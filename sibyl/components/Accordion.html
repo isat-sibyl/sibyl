@@ -76,21 +76,21 @@ class Accordion {
 
   shrink() {
     this.isClosing = true;
-    
+
     const startHeight = `${this.el.offsetHeight}px`;
     const endHeight = `${this.summary.offsetHeight}px`;
-    
+
     if (this.animation) {
       this.animation.cancel();
     }
-    
+
     this.animation = this.el.animate({
       height: [startHeight, endHeight]
     }, {
       duration: 400,
       easing: 'ease-out'
     });
-    
+
     this.animation.onfinish = () => this.onAnimationFinish(false);
     this.animation.oncancel = () => this.isClosing = false;
   }
@@ -105,11 +105,11 @@ class Accordion {
     this.isExpanding = true;
     const startHeight = `${this.el.offsetHeight}px`;
     const endHeight = `${this.summary.offsetHeight + this.content.offsetHeight}px`;
-    
+
     if (this.animation) {
       this.animation.cancel();
     }
-    
+
     this.animation = this.el.animate({
       height: [startHeight, endHeight]
     }, {

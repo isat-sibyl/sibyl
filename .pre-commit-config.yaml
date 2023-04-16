@@ -1,0 +1,20 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+-   repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
+    -   id: black
+-   repo: local
+    hooks:
+    -   id: build-static
+        name: Build Static
+        description: Build Components' static files and other sibyl static files for this version
+        entry: python build-static.py
+        language: system
+        types: [text]
+        pass_filenames: false
