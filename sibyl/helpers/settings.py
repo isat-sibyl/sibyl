@@ -3,6 +3,8 @@ import yaml
 import os
 from .version import version
 
+from typing import List
+
 
 class Settings:
     """A class to hold the settings from settings.yaml."""
@@ -13,9 +15,9 @@ class Settings:
     debug: bool = False
 
     max_component_nesting: int = 100
-    components_paths: list[str] = ["components", "{$SIBYL_PATH}/components"]
-    layouts_paths: list[str] = ["layouts", "{$SIBYL_PATH}/layouts"]
-    root_folders: list[str] = ["favicon"]
+    components_paths: List[str] = ["components", "{$SIBYL_PATH}/components"]
+    layouts_paths: List[str] = ["layouts", "{$SIBYL_PATH}/layouts"]
+    root_folders: List[str] = ["favicon"]
 
     pages_path: str = "pages"
     build_path: str = "dist"

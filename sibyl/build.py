@@ -7,6 +7,7 @@ import shutil
 import time
 from sibyl.helpers import settings as settings_module, component, requirement
 import bs4
+from typing import List, Set
 
 no_var_attributes = ["for-each", "render-if", "render-elif", "render-else"]
 passable_component_attributes = ["id", "class", "style"]
@@ -25,12 +26,12 @@ class Build:
 
     settings: settings_module.Settings
     context: dict
-    locales: list[str]
+    locales: List[str]
     exec_path = os.path.dirname(__file__)
     build_files_path: str
-    debug_path: list[str]
+    debug_path: List[str]
     debug_line: int = -1
-    requirements: set[requirement.Requirement]
+    requirements: Set[requirement.Requirement]
     page_count: int
     locale_count: int
 
