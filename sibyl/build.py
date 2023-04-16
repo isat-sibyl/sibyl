@@ -536,7 +536,7 @@ class Build:
 
         # Step 8: Add locales to context
         self.context["SIBYL_LOCALES"] = self.locales
-        self.context["VERSION"] = version.version
+        self.context["SIBYL_VERSION"] = version.version
         # add everything from global.json to the context, if it exists
         global_path = os.path.join(self.settings.locales_path, "global.json")
 
