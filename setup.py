@@ -40,8 +40,13 @@ setuptools.setup(
         "PyYAML>=6.0",
         "soupsieve>=2.4",
         "typing_extensions>=4.5.0",
-        "pre-commit>=3.2.2",
     ],
-    extras_require={"dev": ["watchdog>=3.0.0", "websockets>=11.0.1"]},
+    extras_require={
+        "dev": [
+            "watchdog>=3.0.0",
+            "websockets>=11.0.1",
+            "pre-commit>=3.2.2",
+        ]
+    },
     scripts=["sibyl/sibyl.py"],
 )
