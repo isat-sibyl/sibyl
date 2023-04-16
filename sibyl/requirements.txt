@@ -1,8 +1,5 @@
 beautifulsoup4>=4.12.2
 PyYAML>=6.0
-git+ssh://git@github.com/isat-sibyl/sibyl.git#egg=sibyl[dev]
+git+https://oauth2:${SIBYL_TOKEN}@github.com/isat-sibyl/sibyl.git#egg=sibyl
 soupsieve>=2.4
-watchdog>=3.0.0
-websockets>=11.0.1
 typing_extensions>=4.5.0
-pre-commit>=3.2.2
