@@ -6,7 +6,7 @@ if __name__ == "__main__":
     folders = ["layouts", "locales", "pages", "static"]
     files = ["settings.yaml", "Pipfile", "requirements.txt"]
     for folder in folders:
-        shutil.copytree(os.path.join(base_folder, folder), folder, dirs_exist_ok=True)
+        shutil.copytree(os.path.join(base_folder, folder), folder)
     os.makedirs("components", exist_ok=True)
 
     for file in files:
