@@ -5,6 +5,8 @@ from sibyl.helpers import settings as settings_module, component
 import sibyl.build
 from sibyl.helpers.version import version
 
+from typing import Set
+
 
 class BuildComponents(sibyl.build.Build):
     def __init__(self, version: str):
@@ -32,7 +34,7 @@ class BuildComponents(sibyl.build.Build):
             )
         os.mkdir(self.build_files_path)
 
-        components: set[component.Component] = set()
+        components: Set[component.Component] = set()
         # scan every component in the components folder and add it to the requirements
         for component_path in self.settings.components_paths:
             for component_file in os.listdir(component_path):

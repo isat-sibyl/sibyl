@@ -23,6 +23,8 @@ class Component:
     script: bs4.Tag
     pythons: bs4.Tag
 
+    cache: Dict[str, Self] = {}  # unused since it had weird interactions with bs4
+
     def __init__(self, file):
         """Load the component from a file."""
         # load the component from a file. the name is the file name without the extension
