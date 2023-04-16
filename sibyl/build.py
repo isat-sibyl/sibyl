@@ -308,6 +308,7 @@ class Build:
         redirects = open(
             os.path.join(self.settings.build_path, "_redirects"), "a", encoding="utf-8"
         )
+        redirects.write(f"/ /{default_locale}/ 200\n")
         for locale in locales:
             redirects.write(f"/{locale}/* /{locale}/:splat 200\n")
         redirects.write(f"/* /{default_locale}/:splat 200\n")
