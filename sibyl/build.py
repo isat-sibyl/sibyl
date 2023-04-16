@@ -308,7 +308,7 @@ class Build:
         redirects = open(
             os.path.join(self.settings.build_path, "_redirects"), "a", encoding="utf-8"
         )
-        redirects.write(f"/* /{default_locale}/ 200\n")
+        redirects.write(f" /{default_locale} 200\n")
 
     def build_page(self, page_path: str, hot_reloading=False):  # NOSONAR
         """Builds the page in the given page_path. The page_path is inside .build_files"""
