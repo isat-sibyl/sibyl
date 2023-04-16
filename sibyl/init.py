@@ -12,6 +12,10 @@ if __name__ == "__main__":
     for file in files:
         shutil.copy(os.path.join(base_folder, file), file)
 
+    # create a git ignore file ignoring the dist folder
+    with open(".gitignore", "w") as file:
+        file.write("dist")
+
     print("Project initialized successfully.")
     print("To start the development server, run 'sibyl dev' or 'python -m sibyl.dev'")
     print("To build the project, run 'sibyl build' or 'python -m sibyl.build'")
