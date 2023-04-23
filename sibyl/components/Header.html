@@ -23,6 +23,9 @@
 									<a render-elif="route.anchor" href="#{{route.anchor}}" class="flex row vca" style="height: var(--header-height);">
 										{{route.name}}
 									</a>
+									<a render-elif="route.href" href="{{route.href}}" rel="noreferrer noopener" target="_blank" class="flex row vca" style="height: var(--header-height);">
+										{{route.name}}
+									</a>
 								</li>
 								<Slot name="extra-pages"></Slot>
 							</ul>
