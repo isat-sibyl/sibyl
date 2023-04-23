@@ -3,7 +3,6 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		background-color: var(--primary);
 		color: #ededed;
 		text-decoration: none;
 		transition: 0.3s;
@@ -20,12 +19,7 @@
 	}
 
 	.button:hover {
-		color: white;
 		transform: scale(1.05);
-	}
-
-	.button.secondary {
-		background-color: var(--secondary);
 	}
 
 	/* smaller font size under 375px */
