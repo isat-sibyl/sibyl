@@ -15,7 +15,7 @@ if __name__ == "__main__":
     with open(".gitignore", "w") as file:
         file.write("dist")
     with open("runtime.txt", "w") as file:
-        file.write("python-3.7")
+        file.write("3.7")
 
     print("Project initialized successfully.")
     print("To start the development server, run 'sibyl dev' or 'python -m sibyl.dev'")

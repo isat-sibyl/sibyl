@@ -3,9 +3,11 @@
 		<div class="flex row ca vca fw" style="gap: 5px;">
 			<Component for-each="social in socials" name="Social" icon="{{social['icon']}}" url="{{social['url']}}"/>
 		</div>
-		<div class="flex row">
-			<span for-each="letter in helpMail">{{letter}}</span>
-		</div>
+		<slot name="email">
+			<div class="flex row">
+				<span for-each="letter in helpMail">{{letter}}</span>
+			</div>
+		</slot>
 		<a href="https://sibyl.dev" target="_blank" rel="noreferrer noopener" class="row vca gutter-sm">
 			<span class="flex row vca" style="font-size: 1.1em; font-weight: 600;">Powered by <img src="/sibyl.svg" height="30" width="30" alt="" style="margin-left: 8px; margin-right: 4px;"> Sibyl</span>
 		</a>

@@ -1,5 +1,5 @@
 <template>
-	<Component name="{{'ButtonPage' if 'page' in globals() else 'ButtonHref'}}" style="background-color: {{color}};">
+	<Component name="{{'ButtonPage' if 'page' in globals() else 'ButtonHref' if 'href' in globals() else 'ButtonAnchor'}}" style="background-color: {{color}};">
 		<Component render-if="iconLeft" name="Icon" icon="{{iconLeft}}" style="margin-right: 10px" />
 		<Slot>{{label}}</Slot>
 		<Component render-if="iconRight" name="Icon" icon="{{iconRight}}" style="margin-left: 10px" />
@@ -38,6 +38,11 @@ except NameError:
 
 	.button:hover {
 		transform: scale(1.05);
+	}
+
+	.button.cta {
+		font-size: 1.3em;
+		padding: 15px 40px;
 	}
 
 	/* smaller font size under 375px */

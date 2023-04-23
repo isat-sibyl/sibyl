@@ -17,9 +17,12 @@
 						<Slot name="pages">
 							<ul id="header-pages" class="flex row vca" style="gap: 30px; margin: 0;">
 								<li for-each="route in routes">
-									<a href="{{SIBYL_ROOT}}{{route.path}}" class="flex row vca" style="height: var(--header-height);">
+									<a render-if="route.path" href="{{SIBYL_ROOT}}{{route.path}}" class="flex row vca" style="height: var(--header-height);">
 										{{route.name}}
 									</a>
+									<a render-elif="route.anchor" href="#{{route.anchor}}" class="flex row vca" style="height: var(--header-height);">
+										{{route.name}}
+									</a>0
 								</li>
 								<Slot name="extra-pages"></Slot>
 							</ul>
