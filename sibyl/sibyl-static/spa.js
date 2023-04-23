@@ -102,9 +102,13 @@ function requestPageChange(href) {
 			continue;
 		}
 		sibylImportedDependencies.add(key);
+		console.log("IMPORTING...", key, value)
 		if (value.type === "STYLE") {
-			const style = document.createElement("style");
+			const style = document.createElement("link");
+			style.rel = "stylesheet";
 			style.href = value.path;
+			style.type = "text/css";
+			style.media = "all";
 			document.head.appendChild(style);
 		}
 		else if (value.type === "SCRIPT") {
