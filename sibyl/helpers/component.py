@@ -152,4 +152,5 @@ class Component:
             if python.has_attr(phase) or (
                 not python.has_attr("cleanup") and phase == "default"
             ):
+                context["__SIBYL_SELF_COMPONENT__"] = self
                 self.run_python(python.text, context)

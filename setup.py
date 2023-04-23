@@ -40,6 +40,8 @@ setuptools.setup(
         "PyYAML>=6.0",
         "soupsieve>=2.4",
         "typing_extensions>=4.5.0",
+        "Markdown>=3.4.3",
+        "Pygments>=2.15.1",
     ],
     extras_require={
         "dev": [

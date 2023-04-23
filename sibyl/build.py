@@ -13,6 +13,7 @@ from sibyl.helpers import (
     shutil_compat,
 )
 import bs4
+import markdown
 from typing import List, Set
 
 no_var_attributes = ["for-each", "render-if", "render-elif", "render-else"]
@@ -264,11 +265,12 @@ class Build:
         template = component_soup.template
 
         old_context = {**self.context}
-
-        component_soup.run_python_phase(self.context, "default")
+        self.context["__SIBYL_COMPONENT_TAG__"] = tag
 
         # add the component's attributes to the template
         self.pass_attributes(tag, template)
+
+        component_soup.run_python_phase(self.context, "default")
 
         self.replace_slots(tag, template)
 
