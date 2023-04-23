@@ -44,12 +44,11 @@ class Build:
     def evaluate(self, condition: str, ignore_errors=False):
         """Evaluates the given condition and returns its value"""
         try:
-            context = self.context.copy()
             # convert every dict in context to a dotdict
-            for key, value in context.items():
-                if isinstance(value, dict):
-                    context[key] = dotdict(value)
-            return eval(condition, context)
+            for key, value in self.context.items():
+                if isinstance(value, dict) and not isinstance(value, dotdict):
+                    self.context[key] = dotdict(value)
+            return eval(condition, self.context)
         except:
             if not ignore_errors:
                 logging.error(
@@ -252,6 +251,8 @@ class Build:
 
         # get the component's name
         component_name = tag["name"]
+        if component_name.startswith("{{") and component_name.endswith("}}"):
+            component_name = self.format(component_name)
         # get the component's path
         component_path = component.Component.resolve_component(
             component_name, self.settings
@@ -264,6 +265,8 @@ class Build:
 
         old_context = {**self.context}
 
+        component_soup.run_python_phase(self.context, "default")
+
         # add the component's attributes to the template
         self.pass_attributes(tag, template)
 
@@ -275,6 +278,8 @@ class Build:
         self.requirements.update(component_soup.get_requirements(self.settings))
 
         tag.replace_with(*template.contents)
+
+        component_soup.run_python_phase(self.context, "cleanup")
 
         self.context = old_context
         self.debug_path.pop()
@@ -301,6 +306,7 @@ class Build:
             return
 
         self.expand_variables(template)
+
         for tag in template.find_all(recursive=False):
             self.perform_replacements(tag)
 
