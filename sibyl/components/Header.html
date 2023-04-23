@@ -38,7 +38,7 @@
 							</ul>
 						</Slot>
 						<Slot name="socials">
-							<div render-if="socials and locales" class="vertical-separator"></div>
+							<div render-if="socials" class="vertical-separator hide-on-mobile"></div>
 							<ul render-if="socials" id="header-socials" class="flex row vca" style="gap: 5px;">
 								<li for-each="social in socials">
 									<Component name="Social" icon="{{social['icon']}}" url="{{social['url']}}"/>
