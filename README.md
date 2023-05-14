@@ -65,7 +65,7 @@ To start a development server with hot reloading, navigate to your project direc
 sibyl dev
 ```
 
-Once the server is up and running, you can view your website at [http://localhost:8000](http://localhost:8000).
+Once the server is up and running, you can view your website at [http://localhost:8080](http://localhost:8080).
 
 ### Building for production
 
@@ -76,3 +76,13 @@ sibyl build
 ```
 
 This command will generate a `dist` folder containing the production-ready static files.
+
+# Project structure
+
+A project is divided by folders:
+
+ - pages - Folder in which every html file represents a page
+ - locales - All the locales with locale specific translations
+ - static - All files that will be accessible at the root of the website
+ - components - Callable components (for reusing code)
+ - layouts - General layout of a page, for reusing for multiple pages
