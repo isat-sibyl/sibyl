@@ -84,5 +84,9 @@ A project is divided by folders:
  - pages - Folder in which every html file represents a page
  - locales - All the locales with locale specific translations
  - static - All files that will be accessible at the root of the website
+   - favicon - Favicon files folder
+   - variables.css - Styling variables for the website
  - components - Callable components (for reusing code)
  - layouts - General layout of a page, for reusing for multiple pages
+ - dist - Folder in which the result website is placed
+ - settings.yaml - The settings file
