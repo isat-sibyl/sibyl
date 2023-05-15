@@ -90,3 +90,7 @@ A project is divided by folders:
  - layouts - General layout of a page, for reusing for multiple pages
  - dist - Folder in which the result website is placed
  - settings.yaml - The settings file
+
+# Custom HTML tags
+
+TO DO
