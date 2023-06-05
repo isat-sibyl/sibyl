@@ -5,10 +5,22 @@
 		"pt" : "Português",
 		"en" : "English"
 	},
+	"socials": [
+		{
+			"icon" : "twitter",
+			"url" : "https://twitter.com/sibyl_dev"
+		},
+		{
+			"icon" : "github",
+			"url" : "https://twitter.com/sibyl_dev"
+		}
+	],
 	"logoImage": "/logo.svg",
 	"headerLogoWidth" : "30",
 	"__comment" : "The following colors are used in the browser's address bar and tab and are related to the favicon",
 	"safariColor" : "#121212",
 	"msColor" : "#2d89ef",
-	"chromeColor" : "#121212"
+	"chromeColor" : "#121212",
+	"siteDescription" : "A simple and lightweight JavaScript library for creating web applications."
+
 }

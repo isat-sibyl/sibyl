@@ -12,31 +12,5 @@
 
 	"contacts" : "Contacts",
 	"otherProjects" : "Other projects",
-
-	"frontPage" : [
-		{
-			"title" : "This is a kickass yet simple website built in under 10 minutes",
-			"content" : "There isn't much about building a multilingual website using Sibyl. Just create simple HTML pages and translation files, and Sibyl does all the heavy-lifting for you."
-		},
-		{
-			"title" : "Save time by building less HTML",
-			"content" : "Create reusable components with associated CSS and HTML. Stop using styles.css as a file for every style in your document and place styles where they make sense and where they're used, and let Sibyl decide when they should be imported."
-		},
-		{
-			"title" : "Teamwork with better code",
-			"content" : "Translations live in json files. HTML lives in page files. Page designers can work at the same as translators and copywriters, because everything is where it belongs."
-		},
-		{
-			"title" : "Sensible almost universal defaults",
-			"content" : "We won't promise our defaults work for every project, but they'll surely work for most. Build your own design using our non opinionated defaults."
-		},
-		{
-			"title" : "Freaking fast webpages with minimal hosting costs",
-			"content" : "All this allows Sibyl's webpages to be the fastest. Everything is statically served, which means you can maximize speed and serve your contents from a CDN like CloudFront."
-		},
-		{
-			"title" : "As close to the original as possible",
-			"content" : "Input your old HTML or export Sibyl code to your application's language. Since Sibyl is as close to raw HTML as possible, this transition should be fast and painless."
-		}
-	]
+	"siteDescription" : "A simple and lightweight JavaScript library for creating web applications."
 }

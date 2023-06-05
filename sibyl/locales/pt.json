@@ -11,16 +11,5 @@
 	],
 
 	"contacts" : "Contactos",
-	"otherProjects" : "Outros projetos",
-
-	"frontPage" : [
-		{
-			"title" : "Às vezes não dá tempo para traduzir tudo, mas não faz mal",
-			"content" : "Iteramos o que existe. Num idioma existem várias secções, noutro existe apenas uma ou até nenhuma. Tudo funciona sem qualquer problema."
-		},
-		{
-			"title" : "Os bloqueios ficam automáticamente resolvidos",
-			"content" : "Assim que o tradutor submete as traduções de um idioma, elas são publicadas, sem necessidade de intervenção do desenvolvedor."
-		}
-	]
+	"otherProjects" : "Outros projetos"
 }

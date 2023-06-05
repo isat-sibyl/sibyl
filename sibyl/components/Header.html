@@ -3,7 +3,7 @@
 	<header>
 		<nav class="row sb vca fw">
 			<div id="nav-menu">
-				<div id="left">
+				<div id="header-left">
 					<Slot name="left">
 						<a href="{{SIBYL_ROOT}}" class="flex row vca" style="color: white;">
 							<img src="{{logoImage}}" alt="{{siteName}}" width="{{headerLogoWidth}}" style="margin-right: 15px; "/>
@@ -17,13 +17,13 @@
 						<Slot name="pages">
 							<ul id="header-pages" class="flex row vca" style="gap: 30px; margin: 0;">
 								<li for-each="route in routes">
-									<a render-if="route.path" href="{{SIBYL_ROOT}}{{route.path}}" class="flex row vca" style="height: var(--header-height);">
+									<a render-if="route.path is not None" href="{{SIBYL_ROOT}}{{route.path}}" class="flex row vca" style="height: var(--header-height);">
 										{{route.name}}
 									</a>
-									<a render-elif="route.anchor" href="#{{route.anchor}}" class="flex row vca" style="height: var(--header-height);">
+									<a render-elif="route.anchor is not None" href="#{{route.anchor}}" class="flex row vca" style="height: var(--header-height);">
 										{{route.name}}
 									</a>
-									<a render-elif="route.href" href="{{route.href}}" rel="noreferrer noopener" target="_blank" class="flex row vca" style="height: var(--header-height);">
+									<a render-elif="route.href is not None" href="{{route.href}}" rel="noreferrer noopener" target="_blank" class="flex row vca" style="height: var(--header-height);">
 										{{route.name}}
 									</a>
 								</li>
