@@ -63,14 +63,17 @@ function changePage(data, promises) {
 
 	main.innerHTML = content.innerHTML;
 
-	const script = doc.querySelector("body>script");
+	const script = doc.querySelector("script");
 	if (script) {
+		console.log("EVALUATING SCRIPT");
+		console.log(script.innerHTML);
 		eval(script.innerHTML);
 	}
 
-	const style = doc.querySelector("body>style");
+	const style = doc.querySelector("style");
 	if (style) {
-		const style = doc.querySelector("style");
+		console.log("ADDING STYLE")
+		console.log(style.innerHTML);
 		style.id = "sibyl-page-style";
 		document.head.appendChild(style);
 	}

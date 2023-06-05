@@ -22,7 +22,15 @@ class Requirement:
 
     def to_dict(self):
         """Convert the requirement to a dictionary."""
-        return {"type": self.type.name, "path": self.path}
+        path = self.path
+        # if the path isn't to an absolute URL, add a slash to the start
+        if (
+            not path.lower().startswith("http://")
+            and not path.lower().startswith("https://")
+            and not path.startswith("/")
+        ):
+            path = "/" + path
+        return {"type": self.type.name, "path": path}
 
     def __hash__(self):
         return (self.name, self.type).__hash__()
@@ -34,8 +42,10 @@ class Requirement:
         """Convert the requirement to a tag."""
         path = self.path
         # if the path isn't to an absolute URL, add a slash to the start
-        if not path.lower().startswith("http://") and not path.lower().startswith(
-            "https://"
+        if (
+            not path.lower().startswith("http://")
+            and not path.lower().startswith("https://")
+            and not path.startswith("/")
         ):
             path = "/" + path
         if self.type == RequirementType.SCRIPT:
