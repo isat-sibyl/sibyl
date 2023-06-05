@@ -65,15 +65,11 @@ function changePage(data, promises) {
 
 	const script = doc.querySelector("script");
 	if (script) {
-		console.log("EVALUATING SCRIPT");
-		console.log(script.innerHTML);
 		eval(script.innerHTML);
 	}
 
 	const style = doc.querySelector("style");
 	if (style) {
-		console.log("ADDING STYLE")
-		console.log(style.innerHTML);
 		style.id = "sibyl-page-style";
 		document.head.appendChild(style);
 	}
@@ -105,7 +101,6 @@ function requestPageChange(href) {
 			continue;
 		}
 		sibylImportedDependencies.add(key);
-		console.log("IMPORTING...", key, value)
 		if (value.type === "STYLE") {
 			const style = document.createElement("link");
 			style.rel = "stylesheet";
