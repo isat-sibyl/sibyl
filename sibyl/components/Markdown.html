@@ -9,7 +9,7 @@ import markdown
 import bs4
 
 template = __SIBYL_COMPONENT_TAG__
-template_str = str("".join(template.contents))
+template_str = "".join(str(content) for content in template.contents)
 # remove leading whitespace in each line
 template_str = "\n".join([line.lstrip() for line in template_str.split("\n")])
 text = markdown.markdown(template_str, extensions=['markdown.extensions.extra', 'markdown.extensions.codehilite'])
