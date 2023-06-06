@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="markdown-container">
 		<Slot></Slot>
 	</div>
 </template>
@@ -18,6 +18,7 @@ template.contents = soup.contents
 </python>
 
 <style>
+.markdown-container a { text-decoration: underline; display: inline-block }
 .codehilite .hll { background-color: #404040 }
 .codehilite  { background: #262626; color: #d0d0d0 }
 .codehilite .c { color: #999999; font-style: italic } /* Comment */
