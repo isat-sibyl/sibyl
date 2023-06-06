@@ -120,7 +120,11 @@ function requestPageChange(href) {
 }
 
 function onLinkClick(e) {
-	const el = e.target;
+	e.stopPropagation();
+	let el = e.target;
+	while (!el.href) {
+		el = el.parentElement;
+	}
 	const href = standardizeLink(el.href);
 	const locale = document.getElementById("locale").innerText.replace(/\s/g, "");
 	const layout = document.getElementById("layout").innerText.replace(/\s/g, "");
@@ -160,6 +164,9 @@ function getPages() {
 			sibylPartialsPages[initialPage] = data;
 			Object.keys(data).forEach(sibylImportedDependencies.add, sibylImportedDependencies);
 		})
+		.catch((error) => {
+			console.error('Error:', error);
+		});
 		sibylFirstLoad = false;
 	}
 
