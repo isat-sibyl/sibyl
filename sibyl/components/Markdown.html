@@ -4,21 +4,35 @@
 	</div>
 </template>
 
-<python content>
+<python>
 import markdown
 import bs4
+import textwrap
 
 template = __SIBYL_COMPONENT_TAG__
 template_str = "".join(str(content) for content in template.contents)
-# remove leading whitespace in each line
-template_str = "\n".join([line.lstrip() for line in template_str.split("\n")])
+
+# Using the textwrap.dedent function to remove common leading whitespace
+template_str = textwrap.dedent(template_str)
+
 text = markdown.markdown(template_str, extensions=['markdown.extensions.extra', 'markdown.extensions.codehilite'])
 soup = bs4.BeautifulSoup(text, "html.parser")
 template.contents = soup.contents
+
+__SIBYL_HALT_COMPONENTS__ = True
+</python>
+
+<python cleanup>
+__SIBYL_HALT_COMPONENTS__ = None
 </python>
 
 <style>
 .markdown-container a { text-decoration: underline; display: inline-block }
+.markdown-container table {	width: 100%; border-collapse: collapse }
+.markdown-container th, .markdown-container td { border: 1px solid #ddd;	padding: 8px;	text-align: left }
+.markdown-container th { background-color: #555;	color: white;}
+.markdown-container tr:nth-child(even) { background-color: #f2f2f2 }
+.markdown-container tr:hover {	background-color: #ddd}
 .codehilite .hll { background-color: #404040 }
 .codehilite  { background: #262626; color: #d0d0d0 }
 .codehilite .c { color: #999999; font-style: italic } /* Comment */

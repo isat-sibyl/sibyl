@@ -68,6 +68,10 @@ class Build:
             if start == -1:
                 result += string
                 break
+            if start > 0 and string[start - 1] == "\\":
+                result += string[: start - 1] + "{{"
+                string = string[start + 2 :]
+                continue
             end = string.find("}}", start)
             if end == -1:
                 raise ValueError("Missing }}")
@@ -274,8 +278,12 @@ class Build:
 
         self.replace_slots(tag, template)
 
-        for child in template.find_all(recursive=False):
-            self.perform_replacements(child)
+        if "__SIBYL_HALT__" not in self.context:
+            for child in template.find_all(recursive=False):
+                self.perform_replacements(child)
+        else:
+            print("Halted")
+            del self.context["__SIBYL_HALT__"]
 
         self.requirements.update(component_soup.get_requirements(self.settings))
 
@@ -303,7 +311,10 @@ class Build:
             self.expand_for(template)
             return
 
-        if template.name == "component":
+        if (
+            template.name == "component"
+            and "__SIBYL_HALT_COMPONENTS__" not in self.context
+        ):
             self.replace_component(template)
             return
 

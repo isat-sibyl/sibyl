@@ -1,0 +1,111 @@
+<template>
+	<div class="drawer-item-wrapper" style="max-height: {{str(54 + 54*len(item.children)) + 'px' if item.children else 'auto'}}">
+		<input
+			class="drawer-checkbox"
+			type="checkbox"
+			id="{{item.id}}"
+			render-if="item.children"
+		/>
+		<label class="drawer-item" render-if="item.children" for="{{item.id}}">
+			<Component
+				name="DrawerItemInner"
+				icon="{{item.icon}}"
+				label="{{item.label}}"
+			>
+				<span class="chevron">
+					<Component name="MaterialIcon" icon="chevron_right" />
+				</span>
+			</Component>
+		</label>
+		<a
+			class="drawer-item"
+			render-elif="item.href"
+			href="{{item.href}}"
+			rel="noreferrer noopener"
+			target="_blank"
+		>
+			<Component
+				name="DrawerItemInner"
+				icon="{{item.icon}}"
+				label="{{item.label}}"
+			/>
+		</a>
+		<a class="drawer-item" render-elif="item.page" href="{{SIBYL_ROOT}}{{item.page}}">
+			<Component
+				name="DrawerItemInner"
+				icon="{{item.icon}}"
+				label="{{item.label}}"
+			/>
+		</a>
+
+		<div class="drawer-item-children" render-if="item.children">
+			<Component
+				name="DrawerItem"
+				for-each="child in item.children"
+				item="{{child}}"
+			/>
+		</div>
+	</div>
+</template>
+
+<python>
+import ast
+if type(item) == str:
+	item = ast.literal_eval(item)
+if not 'children' in item:
+	item['children'] = []
+</python>
+
+<style>
+	.drawer-item-wrapper {
+		width: 100%;
+	}
+
+	.drawer-item {
+		transition: 0.3s;
+		padding: 15px;
+		font-size: 1.1em;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		line-height: 100%;
+	}
+
+	.drawer-item * {
+		cursor: pointer;
+	}
+
+	.drawer-item-children {
+		margin-left: 27px;
+		border-left: 1px solid rgba(255, 255, 255, 0.2);
+		max-height: 0 !important;
+		overflow: hidden;
+		transition: max-height 0.3s ease;
+	}
+
+	.drawer-checkbox {
+		display: none;
+	}
+
+	.drawer-checkbox:checked ~ .drawer-item-children {
+		max-height: inherit !important;
+	}
+
+	.drawer-item .material-icon {
+		margin-right: 10px;
+		user-select: none;
+	}
+
+	.drawer-item:hover {
+		background-color: rgba(255, 255, 255, 0.2);
+	}
+
+	.chevron .material-icon {
+		transition: transform 0.3s ease;
+		margin-left: 40px;
+	}
+
+	.drawer-checkbox:checked ~ label.drawer-item .chevron .material-icon {
+		transform: rotate(90deg);
+	}
+</style>

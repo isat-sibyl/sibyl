@@ -23,7 +23,8 @@ class Component:
     script: bs4.Tag
     pythons: bs4.Tag
 
-    cache: Dict[str, Self] = {}  # unused since it had weird interactions with bs4
+    # unused since it had weird interactions with bs4
+    cache: Dict[str, Self] = {}
 
     def __init__(self, file):
         """Load the component from a file."""
@@ -152,5 +153,4 @@ class Component:
             if python.has_attr(phase) or (
                 not python.has_attr("cleanup") and phase == "default"
             ):
-                context["__SIBYL_SELF_COMPONENT__"] = self
                 self.run_python(python.text, context)

@@ -1,7 +1,7 @@
 <template>
 	<div class="row ca fw" style="height: 0">
 		<div class="dialog" onclick="hideDialog()">
-			{{message | Success}}
+			{{message}}
 		</div>
 	</div>
 </template>
@@ -9,7 +9,7 @@
 <style>
 	.dialog {
 		padding: 15px;
-		background-color: green;
+		background-color: var(--dialog-color);
 		color: white;
 		border-radius: 10px;
 		position: fixed;
