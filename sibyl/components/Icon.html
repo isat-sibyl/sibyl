@@ -1,3 +1,8 @@
 <template>
-	<img src="https://cdn.simpleicons.org/{{icon}}/{{iconColor or 'white'}}" alt="{{icon}}" width="24" height="24">
+	<img src="https://cdn.simpleicons.org/{{icon}}/{{iconColor}}" alt="{{icon}}" width="24" height="24">
 </template>
+
+<python>
+if 'iconColor' not in globals():
+	iconColor = 'white'
+</python>
