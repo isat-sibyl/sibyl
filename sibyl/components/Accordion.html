@@ -101,6 +101,7 @@ class Accordion {
   }
 
   expand() {
+		this.el.dispatchEvent(new Event('accordion-open', { bubbles: true }));
     this.isExpanding = true;
     const startHeight = `${this.el.offsetHeight}px`;
     const endHeight = `${this.summary.offsetHeight + this.content.offsetHeight}px`;
