@@ -21,6 +21,10 @@ To install Sibyl run the following command:
 pip install git+ssh://git@github.com/isat-sibyl/sibyl.git#egg=sibyl[dev]
 ```
 
+## Docs
+
+Available at https://docs.sibyl.dev. Contribute at https://github.com/isat-sibyl/sibyl-docs.
+
 ## Usage
 
 ### Initializing a new project
