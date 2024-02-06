@@ -2,6 +2,8 @@
 
 Sibyl is a static site builder written in Python. It allows you to easily create, develop, and build static websites with a Single Page Application (SPA) feel. With its simple-to-use commands, hot reloading capabilities, and partial page loading, Sibyl makes your web development process seamless and efficient.
 
+That was the marketing part. Now for the real part, Sibyl is something I wrote in a Sunday and wrote some words I call documentation in a morning. Most documentation is actually in my mind. With all that in mind, if you still want to use Sibyl, feel free to. If you want to contribute, even better, just create a PR.
+
 ## Features
 
 * Blazing fast websites
@@ -13,31 +15,11 @@ Sibyl is a static site builder written in Python. It allows you to easily create
 
 Ensure that you have Python 3.7 or higher installed. You can download the latest version of Python from [https://www.python.org/downloads/](https://www.python.org/downloads/).
 
-To install Sibyl, make sure you have access to this GitHub repo from your shell (see adding ssh keys below) and run the following command:
+To install Sibyl run the following command:
 
 ```
 pip install git+ssh://git@github.com/isat-sibyl/sibyl.git#egg=sibyl[dev]
 ```
-
-## Adding ssh keys to your shell (if needed)
-
-If you do not have access to this GitHub repo from your shell, you will need to add your ssh keys to your shell. To do this, follow the instructions below:
-
-1. Generate a new ssh key by running the following command (replace the email with your own):
-
-```
-ssh-keygen -t ed25519 -C "your_email@example.com"
-```
-
-2. Manually clone any repo via ssh before proceeding to the next step. For example, to clone this repo, run:
-
-```
-git clone git@github.com:isat-sibyl/sibyl.git
-```
-
-You will be prompted to trust the host. Verify that the fingerprint matches GitHub's fingerprint and type `yes` to continue.
-
-3. Follow the steps in [GitHub's documentation](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) to add your ssh key to your GitHub account.
 
 ## Usage
 
