@@ -2,7 +2,9 @@
 
 Sibyl is a static site builder written in Python. It allows you to easily create, develop, and build static websites with a Single Page Application (SPA) feel. With its simple-to-use commands, hot reloading capabilities, and partial page loading, Sibyl makes your web development process seamless and efficient.
 
-That was the marketing part. Now for the real part, Sibyl is something I wrote in a Sunday and wrote some words I call documentation in a morning. Most documentation is actually in my mind. With all that in mind, if you still want to use Sibyl, feel free to. If you want to contribute, even better, just create a PR.
+That was the marketing part. Now for the real part, Sibyl is something I wrote in a Sunday and wrote some words I call documentation in a morning. This was never meant to be public or used in anything real, yet here we are.
+
+Most documentation is actually in my mind. Considering all of that, if you still want to use Sibyl, feel free to. If you want to contribute, even better, just create a PR.
 
 ## Features
 
