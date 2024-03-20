@@ -1,6 +1,6 @@
 beautifulsoup4>=4.12.2
 PyYAML>=6.0
-git+https://oauth2:${SIBYL_TOKEN}@github.com/isat-sibyl/sibyl.git#egg=sibyl
+git+https://github.com/isat-sibyl/sibyl.git
 soupsieve>=2.4
 typing_extensions>=4.5.0
 Markdown>=3.4.3
