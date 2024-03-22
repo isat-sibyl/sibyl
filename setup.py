@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import setuptools
 from sibyl.helpers.version import version
 
