@@ -20,12 +20,12 @@ Ensure that you have Python 3.7 or higher installed. You can download the latest
 To install Sibyl run the following command:
 
 ```
-pip install git+https://github.com/isat-sibyl/sibyl.git#egg=sibyl[dev]
+pip install isat-sibyl
 ```
 
 ## Docs
 
-Available at https://docs.sibyl.dev. 
+Available at https://docs.sibyl.dev.
 Contribute at https://github.com/isat-sibyl/sibyl-docs.
 
 ## Usage

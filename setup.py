@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="sibyl",
+    name="isat-sibyl",
     version=version,
     author="Pedro Cavalheiro",
     author_email="pedro.cavalheiro@isat.pt",
