@@ -49,6 +49,7 @@ class Handler(FileSystemEventHandler):
             and not event.src_path.startswith(".\\" + settings.build_path)
             and not event.src_path.startswith(".\\Lib")
             and not event.src_path.startswith(".\\Script")
+            and not event.src_path.startswith(".\\.git")
         ):
             logging.info("File " + event.src_path + " has been modified, rebuilding...")
             try_build()
