@@ -34,7 +34,7 @@
 							<div render-if="SIBYL_OTHER_LOCALES" class="vertical-separator hide-on-mobile"></div>
 							<ul render-if="SIBYL_OTHER_LOCALES" id="header-locales" class="flex row vca locales" style="gap: 10px;">
 								<li for-each="locale in SIBYL_OTHER_LOCALES">
-									<a class="shadow flex row ca vca" href="/{{locale}}/{{SIBYL_PAGE}}" style="text-transform: uppercase; width: 32px; height: 32px; border: 2px solid var(--header-locale-border); background-color: var(--header-locale-bg); color: var(--header-locale-color)">
+									<a class="shadow flex row ca vca" href="/{{locale}}" style="text-transform: uppercase; width: 32px; height: 32px; border: 2px solid var(--header-locale-border); background-color: var(--header-locale-bg); color: var(--header-locale-color)">
 										{{locale}}
 									</a>
 								</li>
