@@ -11,16 +11,14 @@ function smoothScroll(e) {
 }
 
 function handleFetchResponse(response) {
-	{
-		if (!response.ok) {
-			throw Error(response.statusText);
-		}
-		return response.json();
+	if (!response.ok) {
+		throw Error(response.statusText);
 	}
+	return response.json();
 }
 
 function awaitScript(script) {
-	return new Promise((resolve, reject) => {
+	return new Promise((resolve) => {
 		script.addEventListener("load", () => {
 			resolve();
 		});
@@ -191,7 +189,7 @@ function getPages() {
 	}
 }
 
-document.sibyl_getPages = getPages;
+window.addEventListener('added-page', getPages);
 
 window.addEventListener('load', function() {
 	document.body.classList.remove("preload");
