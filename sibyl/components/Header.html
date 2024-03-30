@@ -267,7 +267,7 @@
 <script>
 	function computeActive() {
 		const pages = document.querySelector("#header-pages");
-		const lang = document.querySelector("locale").innerText;
+		const locale = document.getElementById("locale").innerText;
 		if (pages) {
 			const links = pages.querySelectorAll("a");
 			let longest = "";
@@ -278,7 +278,8 @@
 					longestLink = link;
 				}
 			}
-			if (longestLink && (longestLink == window.location.pathname || !`/${locale}/`.startsWith(longestLink))) longestLink.classList.add("active");
+
+			if (longestLink && (longestLink.getAttribute('href') == window.location.pathname || !`/${locale}/`.startsWith(longestLink.getAttribute('href')))) longestLink.classList.add("active");
 		}
 	}
 	function initialComputeActive() {
