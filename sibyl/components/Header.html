@@ -267,6 +267,7 @@
 <script>
 	function computeActive() {
 		const pages = document.querySelector("#header-pages");
+		const lang = document.querySelector("locale").innerText;
 		if (pages) {
 			const links = pages.querySelectorAll("a");
 			let longest = "";
@@ -277,7 +278,7 @@
 					longestLink = link;
 				}
 			}
-			if (longestLink) longestLink.classList.add("active");
+			if (longestLink && (longestLink == window.location.pathname || !`/${locale}/`.startsWith(longestLink))) longestLink.classList.add("active");
 		}
 	}
 	function initialComputeActive() {
