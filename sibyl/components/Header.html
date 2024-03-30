@@ -293,6 +293,11 @@
 		computeActive();
 	});
 
+	window.addEventListener("load", () => {
+		const hamburger = document.getElementById("hamburger");
+		if (hamburger) hamburger.checked = false;
+	})
+
 
 	if (
 		"IntersectionObserver" in window &&
