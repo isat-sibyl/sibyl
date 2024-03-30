@@ -98,7 +98,9 @@ class Component:
             style_req_file = base_req_file.replace(".html", ".css")
             result.append(
                 Requirement(
-                    self.requirement_name(), RequirementType.STYLE, style_req_file
+                    self.requirement_name() + "Styles",
+                    RequirementType.STYLE,
+                    style_req_file,
                 )
             )
             style_build_file = self.file.replace(".html", ".css")
@@ -108,7 +110,9 @@ class Component:
             script_req_file = base_req_file.replace(".html", ".js")
             result.append(
                 Requirement(
-                    self.requirement_name(), RequirementType.SCRIPT, script_req_file
+                    self.requirement_name() + "Script",
+                    RequirementType.SCRIPT,
+                    script_req_file,
                 )
             )
             script_build_file = self.file.replace(".html", ".js")
@@ -154,3 +158,9 @@ class Component:
                 not python.has_attr("cleanup") and phase == "default"
             ):
                 self.run_python(python.text, context)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self) -> str:
+        return self.name
