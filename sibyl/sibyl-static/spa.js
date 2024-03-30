@@ -191,7 +191,7 @@ function getPages() {
 	}
 }
 
-document.sibyl_getPages = getPages;
+window.sibyl_getPages = getPages;
 
 window.addEventListener('load', function() {
 	document.body.classList.remove("preload");
