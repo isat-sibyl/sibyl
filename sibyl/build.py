@@ -13,11 +13,17 @@ from sibyl.helpers import (
     shutil_compat,
 )
 import bs4
-import markdown
 from typing import List, Set
 
 no_var_attributes = ["for-each", "render-if", "render-elif", "render-else"]
-passable_component_attributes = ["id", "class", "style"]
+passable_component_attributes = [
+    "id",
+    "class",
+    "style",
+    "onclick",
+    "onmouseover",
+    "onmouseout",
+]
 
 
 class dotdict(dict):
