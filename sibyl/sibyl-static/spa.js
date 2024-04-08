@@ -127,11 +127,6 @@ function onLinkClick(e) {
 	const locale = document.getElementById("locale").innerText.replace(/\s/g, "");
 	const layout = document.getElementById("layout").innerText.replace(/\s/g, "");
 
-	if (href == standardizeLink(window.location.href)) {
-		e.preventDefault()
-		return;
-	}
-
 	const requirements = sibylPartialsPages[href];
 
 	if (!requirements || requirements['locale'] != locale || requirements['layout'] != layout) {
