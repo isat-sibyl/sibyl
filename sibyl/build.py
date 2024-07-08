@@ -23,6 +23,7 @@ passable_component_attributes = [
     "onclick",
     "onmouseover",
     "onmouseout",
+    "required",
 ]
 
 
