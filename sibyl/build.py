@@ -306,7 +306,7 @@ class Build:
     ):  # TODO: Tail recursion optimization
         """Performs replacements in the given template and recursively in all its children."""
         self.debug_line = template.sourceline
-        if template.__visited or not isinstance(template, bs4.Tag):
+        if getattr(template, "__visited", False) or not isinstance(template, bs4.Tag):
             return
 
         template.__visited = True
@@ -336,6 +336,62 @@ class Build:
             os.path.join(self.settings.build_path, "_redirects"), "a", encoding="utf-8"
         )
         redirects.write(f"/ /{self.settings.default_locale}\n")
+
+    def _write_redirect_page(self, dest_path: str, target_url: str, lang: str):
+        """Write a minimal HTML redirect page."""
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        html = (
+            "<!doctype html>"
+            f'<html lang="{lang}"><head>'
+            '<meta charset="utf-8">'
+            f'<meta http-equiv="refresh" content="0; url={target_url}">'
+            f'<link rel="canonical" href="{target_url}">'
+            "</head>"
+            f'<body><p>Redirecting to <a href="{target_url}">{target_url}</a>…</p></body>'
+            "</html>"
+        )
+        with open(dest_path, "w", encoding="utf-8") as f:
+            f.write(html)
+
+    def create_main_language_redirect_pages(self):
+        """
+        For the main language (settings.default_locale), create a copy of every page
+        at the root (no locale prefix) that redirects to the actual locale-scoped page.
+        """
+        default_locale = getattr(self.settings, "default_locale", None)
+        if not default_locale or default_locale not in self.locales:
+            return
+
+        src_root = os.path.join(self.settings.build_path, default_locale)
+
+        # 1) For every .../index.html under the default locale, create a root-level redirecting index.html
+        for root, _, files in os.walk(src_root):
+            if "index.html" not in files:
+                continue
+
+            rel_dir = os.path.relpath(root, src_root)  # '.' for home
+            # Build target URL (always slash-terminated)
+            if rel_dir == ".":
+                target = f"/{default_locale}/"
+                dest_dir = self.settings.build_path  # root
+            else:
+                target = f"/{default_locale}/{rel_dir.replace(os.path.sep, '/')}/"
+                dest_dir = os.path.join(self.settings.build_path, rel_dir)
+
+            dest_path = os.path.join(dest_dir, "index.html")
+            # Don't overwrite the real localized page; we're writing to the non-locale path
+            self._write_redirect_page(dest_path, target, default_locale)
+
+        # 2) Also ensure root 404.html redirects to the localized 404.html (if it exists)
+        localized_404 = os.path.join(
+            self.settings.build_path, default_locale, "404.html"
+        )
+        if os.path.exists(localized_404):
+            self._write_redirect_page(
+                os.path.join(self.settings.build_path, "404.html"),
+                f"/{default_locale}/404.html",
+                default_locale,
+            )
 
     def build_page(self, page_path: str, hot_reloading=False):  # NOSONAR
         """Builds the page in the given page_path. The page_path is inside .build_files"""
@@ -427,16 +483,17 @@ class Build:
                 raise ValueError("No template slot found in layout " + layout_path)
             template_slot.replace_with(*page.template.contents)
             title_slot = layout_soup.find("slot", {"name": "title"})
-            if title_slot is None:
-                raise ValueError("No title slot found in layout " + layout_path)
-            title = page.template.get("title", None)
-            if title is not None:
-                title_slot.replace_with(page.template.get("title", ""))
-            else:
-                logging.warning("No title found for page " + relative_page_path)
-                if self.settings.treat_warnings_as_errors:
-                    raise ValueError("No title found for page " + relative_page_path)
-                title_slot.replace_with(*title_slot.contents)
+            if title_slot is not None:
+                title = page.template.get("title", None)
+                if title is not None:
+                    title_slot.replace_with(page.template.get("title", ""))
+                else:
+                    logging.warning("No title found for page " + relative_page_path)
+                    if self.settings.treat_warnings_as_errors:
+                        raise ValueError(
+                            "No title found for page " + relative_page_path
+                        )
+                    title_slot.replace_with(*title_slot.contents)
 
             if page.script:
                 layout_soup.body.append(page.script)
@@ -616,6 +673,10 @@ class Build:
                 # remove empty directories
                 shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 
+        # NEW: create root-level copies for the main language that redirect to the locale pages
+        self.create_main_language_redirect_pages()
+
+        # Keep Netlify-style redirect for "/" -> "/{default_locale}" as well
         self.create_redirects_file()
 
         logging.info(

@@ -1,0 +1,52 @@
+
+	.drawer-item-wrapper {
+		width: 100%;
+	}
+
+	.drawer-item {
+		transition: 0.3s;
+		padding: 15px;
+		font-size: 1.1em;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		line-height: 100%;
+	}
+
+	.drawer-item * {
+		cursor: pointer;
+	}
+
+	.drawer-item-children {
+		margin-left: 27px;
+		border-left: 1px solid rgba(255, 255, 255, 0.2);
+		max-height: 0 !important;
+		overflow: hidden;
+		transition: max-height 0.3s ease;
+	}
+
+	.drawer-checkbox {
+		display: none;
+	}
+
+	.drawer-checkbox:checked ~ .drawer-item-children {
+		max-height: inherit !important;
+	}
+
+	.drawer-item .material-icon {
+		margin-right: 10px;
+		user-select: none;
+	}
+
+	.drawer-item:hover {
+		background-color: rgba(255, 255, 255, 0.2);
+	}
+
+	.chevron .material-icon {
+		transition: transform 0.3s ease;
+		margin-left: 40px;
+	}
+
+	.drawer-checkbox:checked ~ label.drawer-item .chevron .material-icon {
+		transform: rotate(90deg);
+	}

@@ -1,0 +1,58 @@
+
+	.skewed-bg img {
+		max-width: min(400px, 100vw);
+		transform: skewY(-2deg);
+	}
+
+	.skewed-bg.reverse img {
+		max-width: min(400px, 100vw);
+		transform: skewY(2deg);
+	}
+
+	.skewed-bg>div {
+		gap: 40px;
+	}
+
+	.skewed-bg>div>div {
+		max-width: min(400px, 100vw);
+		padding: 10px;
+		padding-bottom: 60px;
+	}
+
+	.skewed-bg {
+		position: relative;
+		margin-top: 25px;
+		width: 100%;
+		max-width: 100%;
+	}
+	.skewed-bg::before {
+		position: absolute;
+    transform: skewY(-2deg) translateY(-0.45em);
+    bottom: 0vw;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    content: '';
+		background: linear-gradient(138deg, #CBDF88 75%, #CBDF88) #CBDF88;
+		z-index: -2;
+	}
+
+	.skewed-bg.reverse::before {
+    transform: skewY(2deg) translateY(-0.45em);
+		background: linear-gradient(138deg, #006330 75%, #006330) #006330;
+		z-index: -1;
+	}
+
+	.skewed-bg.reverse {
+		color: white;
+	}
+
+	@media (min-width: 768px) {
+		.skewed-bg.reverse > div {
+			flex-direction: row-reverse;
+		}
+
+		.left-on-pc {
+			justify-content: flex-start !important;
+		}
+	}
