@@ -331,32 +331,53 @@ class Build:
             self.perform_replacements(tag)
 
     def create_redirects_file(self):
-        """Create a redirects file."""
+        """Create a redirects file.
+
+        NOTE: We keep only the root ('/') -> '/{default_locale}' rule.
+        Path-specific UX rewrites are handled client-side via JS on the copied pages.
+        """
         redirects = open(
             os.path.join(self.settings.build_path, "_redirects"), "a", encoding="utf-8"
         )
         redirects.write(f"/ /{self.settings.default_locale}\n")
 
-    def _write_redirect_page(self, dest_path: str, target_url: str, lang: str):
-        """Write a minimal HTML redirect page."""
-        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-        html = (
-            "<!doctype html>"
-            f'<html lang="{lang}"><head>'
-            '<meta charset="utf-8">'
-            f'<meta http-equiv="refresh" content="0; url={target_url}">'
-            f'<link rel="canonical" href="{target_url}">'
-            "</head>"
-            f'<body><p>Redirecting to <a href="{target_url}">{target_url}</a>…</p></body>'
-            "</html>"
+    def _inject_locale_url_rewrite(
+        self, html: str, default_locale: str, target_path: str
+    ) -> str:
+        """
+        Inject a small script that rewrites the URL bar to the localized path
+        without reloading, only if not already prefixed with /{default_locale}.
+        target_path: the localized path we want to show in the URL (e.g., '/en/labs/').
+        """
+        script = (
+            "<script>(function(){"
+            "try{var p=location.pathname;"
+            f"var pref='/{default_locale}';"
+            "if(!p.startsWith(pref)){"
+            f"var newPath='{target_path}'.replace(/\\/+/g,'/');"
+            "var url=newPath+(location.search||'')+(location.hash||'');"
+            "history.replaceState(null,'',url);"
+            "}"
+            "}catch(e){/* noop */}"
+            "})();</script>"
         )
-        with open(dest_path, "w", encoding="utf-8") as f:
-            f.write(html)
+
+        # Insert right before </head> if possible; otherwise before </body>; otherwise append
+        lower = html.lower()
+        idx = lower.find("</head>")
+        if idx != -1:
+            return html[:idx] + script + html[idx:]
+        idx = lower.find("</body>")
+        if idx != -1:
+            return html[:idx] + script + html[idx:]
+        return html + script
 
     def create_main_language_redirect_pages(self):
         """
-        For the main language (settings.default_locale), create a copy of every page
-        at the root (no locale prefix) that redirects to the actual locale-scoped page.
+        UPDATED BEHAVIOR:
+        For the main language (settings.default_locale), create a *copy* of every page
+        at the root (no locale prefix) and inject JS that rewrites the URL to the
+        localized path with history.replaceState (no reload).
         """
         default_locale = getattr(self.settings, "default_locale", None)
         if not default_locale or default_locale not in self.locales:
@@ -364,34 +385,51 @@ class Build:
 
         src_root = os.path.join(self.settings.build_path, default_locale)
 
-        # 1) For every .../index.html under the default locale, create a root-level redirecting index.html
+        # For every .../index.html under the default locale, create a root-level copy with URL rewrite
         for root, _, files in os.walk(src_root):
             if "index.html" not in files:
                 continue
 
             rel_dir = os.path.relpath(root, src_root)  # '.' for home
-            # Build target URL (always slash-terminated)
+            src_index = os.path.join(root, "index.html")
+
             if rel_dir == ".":
-                target = f"/{default_locale}/"
-                dest_dir = self.settings.build_path  # root
+                # Home page
+                dest_dir = self.settings.build_path
+                target_path = f"/{default_locale}/"
             else:
-                target = f"/{default_locale}/{rel_dir.replace(os.path.sep, '/')}/"
                 dest_dir = os.path.join(self.settings.build_path, rel_dir)
+                # Ensure trailing slash for “directory” URLs
+                clean_rel = rel_dir.replace(os.path.sep, "/").strip("/")
+                target_path = f"/{default_locale}/{clean_rel}/"
 
-            dest_path = os.path.join(dest_dir, "index.html")
-            # Don't overwrite the real localized page; we're writing to the non-locale path
-            self._write_redirect_page(dest_path, target, default_locale)
+            os.makedirs(dest_dir, exist_ok=True)
+            dest_index = os.path.join(dest_dir, "index.html")
 
-        # 2) Also ensure root 404.html redirects to the localized 404.html (if it exists)
+            # Read, inject script, write
+            with open(src_index, "r", encoding="utf-8") as f:
+                html = f.read()
+            html = self._inject_locale_url_rewrite(html, default_locale, target_path)
+            with open(dest_index, "w", encoding="utf-8") as f:
+                f.write(html)
+
+        # Also copy 404 to root and rewrite URL to the localized 404
         localized_404 = os.path.join(
             self.settings.build_path, default_locale, "404.html"
         )
         if os.path.exists(localized_404):
-            self._write_redirect_page(
-                os.path.join(self.settings.build_path, "404.html"),
-                f"/{default_locale}/404.html",
-                default_locale,
+            with open(localized_404, "r", encoding="utf-8") as f:
+                html_404 = f.read()
+            target_404 = f"/{default_locale}/404.html"
+            html_404 = self._inject_locale_url_rewrite(
+                html_404, default_locale, target_404
             )
+            with open(
+                os.path.join(self.settings.build_path, "404.html"),
+                "w",
+                encoding="utf-8",
+            ) as f:
+                f.write(html_404)
 
     def build_page(self, page_path: str, hot_reloading=False):  # NOSONAR
         """Builds the page in the given page_path. The page_path is inside .build_files"""
@@ -673,7 +711,7 @@ class Build:
                 # remove empty directories
                 shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 
-        # NEW: create root-level copies for the main language that redirect to the locale pages
+        # Create root-level copies for the main language with JS URL replacement
         self.create_main_language_redirect_pages()
 
         # Keep Netlify-style redirect for "/" -> "/{default_locale}" as well
