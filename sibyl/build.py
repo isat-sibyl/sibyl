@@ -5,6 +5,12 @@ import logging
 import os
 import shutil
 import time
+import re
+from functools import lru_cache
+from typing import List, Set
+
+import bs4
+
 from sibyl.helpers import (
     settings as settings_module,
     component,
@@ -12,8 +18,24 @@ from sibyl.helpers import (
     version,
     shutil_compat,
 )
-import bs4
-from typing import List, Set
+
+# ----------------------------
+# Parser selection (lxml if available)
+# ----------------------------
+try:
+    import lxml  # noqa: F401
+
+    PARSER = "lxml"
+except Exception:
+    PARSER = "html.parser"
+
+# ----------------------------
+# Fast regex for {{ ... }} templating (dynamic eval preserved)
+# ----------------------------
+FORMAT_RE = re.compile(
+    r"(?<!\\)\{\{(.*?)\}\}"
+)  # matches {{ expr }} not preceded by backslash
+
 
 no_var_attributes = ["for-each", "render-if", "render-elif", "render-else"]
 passable_component_attributes = [
@@ -35,6 +57,60 @@ class dotdict(dict):
     __delattr__ = dict.__delitem__
 
 
+# ----------------------------
+# Small caches to avoid repeated I/O/resolution
+# ----------------------------
+def _settings_identity(settings: settings_module.Settings):
+    """Make settings hashable for caches that depend on resolution roots."""
+    return (
+        getattr(settings, "components_path", None),
+        getattr(settings, "layouts_path", None),
+        getattr(settings, "pages_path", None),
+        getattr(settings, "static_path", None),
+        getattr(settings, "locales_path", None),
+        getattr(settings, "build_path", None),
+    )
+
+
+@lru_cache(maxsize=4096)
+def _resolve_component_cached(name: str, settings_id):
+    # We can't pass the settings object (unhashable); use a cheap identity tuple
+    # Resolution logic lives in component.Component
+    # Note: we re-create a tiny proxy settings if needed; but resolve_component only uses paths.
+    class _S:
+        (
+            components_path,
+            layouts_path,
+            pages_path,
+            static_path,
+            locales_path,
+            build_path,
+        ) = settings_id
+
+    return component.Component.resolve_component(name, _S)
+
+
+@lru_cache(maxsize=1024)
+def _read_file_cached(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+@lru_cache(maxsize=256)
+def _resolve_layout_path_cached(layout_name: str, settings_id):
+    class _S:
+        (
+            components_path,
+            layouts_path,
+            pages_path,
+            static_path,
+            locales_path,
+            build_path,
+        ) = settings_id
+
+    return component.Component.resolve_layout(layout_name, _S)
+
+
 class Build:
     """A class to build the site."""
 
@@ -49,15 +125,33 @@ class Build:
     page_count: int
     locale_count: int
 
+    # ------------- Helpers & Fast Paths -------------
+
+    def _prepare_context(self, ctx: dict):
+        """Convert nested dicts/lists to dotdict once per locale to minimize work later."""
+        stack = [ctx]
+        while stack:
+            d = stack.pop()
+            for k, v in list(d.items()):
+                if isinstance(v, dict) and not isinstance(v, dotdict):
+                    d[k] = dotdict(v)
+                    stack.append(d[k])
+                elif isinstance(v, list):
+                    # upgrade dicts inside lists too
+                    for i, item in enumerate(v):
+                        if isinstance(item, dict) and not isinstance(item, dotdict):
+                            v[i] = dotdict(item)
+                            stack.append(v[i])
+
     def evaluate(self, condition: str, ignore_errors=False):
         """Evaluates the given condition and returns its value"""
         try:
-            # convert every dict in context to a dotdict
-            for key, value in self.context.items():
+            # Convert any newly introduced dicts to dotdict only as they appear
+            for key, value in list(self.context.items()):
                 if isinstance(value, dict) and not isinstance(value, dotdict):
                     self.context[key] = dotdict(value)
             return eval(condition, self.context)
-        except:
+        except Exception:
             if not ignore_errors:
                 logging.error(
                     f"Error evaluating '{condition}' at or near line {self.debug_line}: {' -> '.join(self.debug_path)}"
@@ -66,37 +160,44 @@ class Build:
             raise
 
     def format(self, string: str):
-        """Formats the given string, evaluating all text inside {{}}"""
-        result = ""
-        if string is None:
-            return result
-        while True:
-            start = string.find("{{")
-            if start == -1:
-                result += string
-                break
+        """Formats the given string, evaluating all text inside {{...}} against the current context."""
+        if not string:
+            return ""
+
+        result_parts = []
+        last = 0
+        for m in FORMAT_RE.finditer(string):
+            start, end = m.span()
+
+            # Respect escaping with a backslash: \{{ ... }}
             if start > 0 and string[start - 1] == "\\":
-                result += string[: start - 1] + "{{"
-                string = string[start + 2 :]
                 continue
-            end = string.find("}}", start)
-            if end == -1:
-                raise ValueError("Missing }}")
-            result += string[:start]
+
+            # append literal text up to {{
+            result_parts.append(string[last:start])
+
+            expr = m.group(1)
             try:
-                result += str(self.evaluate(string[start + 2 : end]))
+                result_parts.append(str(self.evaluate(expr)))
             except (NameError, AttributeError):
                 logging.warning(
-                    f"Variable '{string[start + 2:end]}' not found at or near line {self.debug_line}: {' -> '.join(self.debug_path)}"
+                    f"Variable '{expr}' not found at or near line {self.debug_line}: {' -> '.join(self.debug_path)}"
                 )
                 logging.debug(f"Context: {self.context}")
                 if self.settings.treat_warnings_as_errors:
                     raise NameError(
-                        f"Variable '{string[start + 2:end]}' not found at or near line {self.debug_line}: {' -> '.join(self.debug_path)}"
+                        f"Variable '{expr}' not found at or near line {self.debug_line}: {' -> '.join(self.debug_path)}"
                     )
-                result += string[start : end + 2]
-            string = string[end + 2 :]
-        return result
+                # keep original {{...}} if unknown
+                result_parts.append("{{" + expr + "}}")
+            last = end
+
+        # tail literal
+        result_parts.append(string[last:])
+
+        # unescape \{{ -> {{
+        out = "".join(result_parts).replace("\\{{", "{{")
+        return out
 
     @staticmethod
     def kebab_to_camel(string: str):
@@ -125,7 +226,7 @@ class Build:
             del tag["render-else"]
             return True
 
-        self.debug_line = tag.sourceline
+        self.debug_line = tag.sourceline if hasattr(tag, "sourceline") else -1
 
         if condition is None:
             raise ValueError("Missing condition")
@@ -155,12 +256,14 @@ class Build:
         return False
 
     def expand_for(self, tag: bs4.Tag):  # NOSONAR
-        """Expands the for-each tag."""
-        self.debug_line = tag.sourceline
+        """Expands the for-each tag (fast path: reparse from HTML snapshot instead of copy.copy(Tag))."""
+        self.debug_line = tag.sourceline if hasattr(tag, "sourceline") else -1
         # get the for-each attribute
         for_each = tag["for-each"]
         # get the name of the variable
-        (var_name, list_name) = for_each.split(" in ")
+        (var_name, list_name) = for_each.split(" in ", 1)
+        var_name = var_name.strip()
+        list_name = list_name.strip()
         # get the list
         try:
             iterable = self.evaluate(list_name)
@@ -173,48 +276,62 @@ class Build:
                 raise
         old_value = self.context.get(var_name)
 
-        del tag["for-each"]
+        # Snapshot original HTML and parent; then remove the original tag once
+        parent = tag.parent
+        original_html = str(tag)
+        tag.extract()  # remove the template node
 
         for item in iterable:
-            new_tag = copy.copy(tag)
             is_tuple = False
             if isinstance(item, tuple):
                 is_tuple = True
                 item = list(item)
 
-            if isinstance(item, dict):
+            if isinstance(item, dict) and not isinstance(item, dotdict):
                 item = dotdict(item)
             elif isinstance(item, list):
                 for i in range(len(item)):
-                    if isinstance(item[i], dict):
+                    if isinstance(item[i], dict) and not isinstance(item[i], dotdict):
                         item[i] = dotdict(item[i])
 
             if is_tuple:
                 item = tuple(item)
+
             self.context[var_name] = item
-            tag.insert_before(new_tag)
+
+            # Re-parse a fresh tag from snapshot and process it
+            new_tag = bs4.BeautifulSoup(original_html, PARSER).find(
+                True, recursive=False
+            )
+            if new_tag and new_tag.has_attr("for-each"):
+                del new_tag["for-each"]
+
+            # Append to parent, then process replacements on that subtree
+            parent.append(new_tag)
             self.perform_replacements(new_tag)
 
-        tag.extract()
-
+        # restore previous var
         self.context[var_name] = old_value
 
     def expand_variables(self, template: bs4.Tag):
         """Expands the variables in the given template. A variable is inside {{}} and can be inside an attribute except the attributes in no_var_attributes."""
-        for attr in template.attrs:
+        # attributes
+        for attr in list(template.attrs):
             if attr not in no_var_attributes:
-                # if the attribute is a list
-                if isinstance(template[attr], list):
-                    template[attr] = [self.format(value) for value in template[attr]]
+                val = template[attr]
+                if isinstance(val, list):
+                    template[attr] = [self.format(v) for v in val]
                 else:
-                    template[attr] = self.format(template[attr])
-        for tag in template.contents:
-            if isinstance(tag, bs4.Comment):
-                tag.extract()
-            elif isinstance(tag, bs4.NavigableString) and not isinstance(
-                tag, bs4.Doctype
+                    template[attr] = self.format(val)
+
+        # node contents (strings/comments)
+        for node in list(template.contents):
+            if isinstance(node, bs4.Comment):
+                node.extract()
+            elif isinstance(node, bs4.NavigableString) and not isinstance(
+                node, bs4.Doctype
             ):
-                tag.replace_with(self.format(str(tag)))
+                node.replace_with(self.format(str(node)))
 
     def replace_slots(self, tag: bs4.Tag, template: bs4.Tag):
         """Replaces the slots in the given template."""
@@ -244,9 +361,11 @@ class Build:
             if attr not in passable_component_attributes:
                 self.context[Build.kebab_to_camel(attr)] = self.format(source[attr])
                 continue
+            # Only iterate direct children once
             for child in dest.find_all(recursive=False):
                 if attr == "class":
                     child["class"] = child.get("class", [])
+                    # ensure classes are strings
                     child["class"].extend(self.format(x) for x in source["class"])
                 elif attr == "style":
                     old_style = child.get("style", "")
@@ -258,19 +377,37 @@ class Build:
 
     def replace_component(self, tag: bs4.Tag):
         """Replaces the component tag with the component's template."""
-        self.debug_line = tag.sourceline
+        self.debug_line = tag.sourceline if hasattr(tag, "sourceline") else -1
         self.debug_path.append(tag["name"] + " (Component)")
 
         # get the component's name
         component_name = tag["name"]
         if component_name.startswith("{{") and component_name.endswith("}}"):
             component_name = self.format(component_name)
-        # get the component's path
-        component_path = component.Component.resolve_component(
-            component_name, self.settings
-        )
+
+        # resolve component path (cached)
+        settings_id = _settings_identity(self.settings)
+        try:
+            component_path = _resolve_component_cached(component_name, settings_id)
+        except Exception:
+            # fallback to non-cached resolution if something changed
+            component_path = component.Component.resolve_component(
+                component_name, self.settings
+            )
+
         # get the component
-        component_soup = component.Component.build(component_path)
+        # Prefer building directly from HTML if available; otherwise fallback to path-based build
+        # (keeps behavior but saves I/O if build_from_html exists)
+        try:
+            html_src = _read_file_cached(component_path)
+            builder = getattr(component.Component, "build_from_html", None)
+            if callable(builder):
+                component_soup = builder(html_src)
+            else:
+                component_soup = component.Component.build(component_path)
+        except Exception:
+            # ultimate fallback
+            component_soup = component.Component.build(component_path)
 
         # get a copy of the component's template
         template = component_soup.template
@@ -305,7 +442,7 @@ class Build:
         self, template: bs4.Tag
     ):  # TODO: Tail recursion optimization
         """Performs replacements in the given template and recursively in all its children."""
-        self.debug_line = template.sourceline
+        self.debug_line = getattr(template, "sourceline", -1)
         if getattr(template, "__visited", False) or not isinstance(template, bs4.Tag):
             return
 
@@ -327,8 +464,17 @@ class Build:
 
         self.expand_variables(template)
 
-        for tag in template.find_all(recursive=False):
-            self.perform_replacements(tag)
+        # iterate direct children without find_all(recursive=False)
+        for tag in list(template.contents):
+            if isinstance(tag, bs4.Tag):
+                self.perform_replacements(tag)
+            elif isinstance(tag, bs4.Comment):
+                tag.extract()
+            # NavigableString handled in expand_variables
+
+    # ----------------------------
+    # Redirects and language helpers
+    # ----------------------------
 
     def create_redirects_file(self):
         """Create a redirects file.
@@ -336,10 +482,9 @@ class Build:
         NOTE: We keep only the root ('/') -> '/{default_locale}' rule.
         Path-specific UX rewrites are handled client-side via JS on the copied pages.
         """
-        redirects = open(
-            os.path.join(self.settings.build_path, "_redirects"), "a", encoding="utf-8"
-        )
-        redirects.write(f"/ /{self.settings.default_locale}\n")
+        redirects_path = os.path.join(self.settings.build_path, "_redirects")
+        with open(redirects_path, "w", encoding="utf-8") as redirects:
+            redirects.write(f"/ /{self.settings.default_locale}\n")
 
     def _inject_locale_url_rewrite(
         self, html: str, default_locale: str, target_path: str
@@ -431,6 +576,10 @@ class Build:
             ) as f:
                 f.write(html_404)
 
+    # ----------------------------
+    # Build pipeline
+    # ----------------------------
+
     def build_page(self, page_path: str, hot_reloading=False):  # NOSONAR
         """Builds the page in the given page_path. The page_path is inside .build_files"""
         self.debug_path.append(os.path.basename(page_path))
@@ -452,7 +601,7 @@ class Build:
         build_page_path = os.path.join(self.settings.build_path, relative_page_path)
         os.makedirs(os.path.dirname(build_page_path), exist_ok=True)
 
-        # Step 2: Load the page
+        # Step 2: Load the page (do not cache built objects; they are mutated)
         page = component.Component.build(page_path, True)
         self.requirements = set()
         self.requirements.update(
@@ -501,67 +650,68 @@ class Build:
             requirements_file.write(json.dumps(requirements))
 
         # Step 6: Inject page into layout (found in the layout attribute of the template)
-
-        # resolve the layout and copy it
         if "layout" not in page.template.attrs:
             raise ValueError("No layout specified for page " + relative_page_path)
-        layout_path = component.Component.resolve_layout(
-            page.template["layout"], self.settings
-        )
 
-        # load the layout
-        with open(layout_path, "r+", encoding="utf-8") as file:
-            layout_soup = bs4.BeautifulSoup(file.read(), "html.parser")
+        # resolve the layout path (cached), then parse from cached HTML text
+        settings_id = _settings_identity(self.settings)
+        try:
+            layout_path = _resolve_layout_path_cached(
+                page.template["layout"], settings_id
+            )
+        except Exception:
+            layout_path = component.Component.resolve_layout(
+                page.template["layout"], self.settings
+            )
 
-            self.perform_replacements(layout_soup)
+        try:
+            layout_html = _read_file_cached(layout_path)
+        except Exception:
+            with open(layout_path, "r+", encoding="utf-8") as f:
+                layout_html = f.read()
 
-            # inject the page into the layout
-            template_slot = layout_soup.find("slot", {"name": "template"})
-            if template_slot is None:
-                raise ValueError("No template slot found in layout " + layout_path)
-            template_slot.replace_with(*page.template.contents)
-            title_slot = layout_soup.find("slot", {"name": "title"})
-            if title_slot is not None:
-                title = page.template.get("title", None)
-                if title is not None:
-                    title_slot.replace_with(page.template.get("title", ""))
-                else:
-                    logging.warning("No title found for page " + relative_page_path)
-                    if self.settings.treat_warnings_as_errors:
-                        raise ValueError(
-                            "No title found for page " + relative_page_path
-                        )
-                    title_slot.replace_with(*title_slot.contents)
+        layout_soup = bs4.BeautifulSoup(layout_html, PARSER)
 
-            if page.script:
-                layout_soup.body.append(page.script)
-            if page.style:
-                page.style.attrs["id"] = "sibyl-page-style"
-                layout_soup.head.append(page.style)
+        self.perform_replacements(layout_soup)
 
-            # inject all the requirements
-            for req in self.requirements:
-                if req.type == requirement.RequirementType.SCRIPT:
-                    layout_soup.body.append(req.to_tag())
-                elif req.type == requirement.RequirementType.STYLE:
-                    layout_soup.head.append(req.to_tag())
+        # inject the page into the layout
+        template_slot = layout_soup.find("slot", {"name": "template"})
+        if template_slot is None:
+            raise ValueError("No template slot found in layout " + layout_path)
+        template_slot.replace_with(*page.template.contents)
+        title_slot = layout_soup.find("slot", {"name": "title"})
+        if title_slot is not None:
+            title = page.template.get("title", None)
+            if title is not None:
+                title_slot.replace_with(page.template.get("title", ""))
+            else:
+                logging.warning("No title found for page " + relative_page_path)
+                if self.settings.treat_warnings_as_errors:
+                    raise ValueError("No title found for page " + relative_page_path)
+                title_slot.replace_with(*title_slot.contents)
+
+        if page.script:
+            layout_soup.body.append(page.script)
+        if page.style:
+            page.style.attrs["id"] = "sibyl-page-style"
+            layout_soup.head.append(page.style)
+
+        # inject all the requirements
+        for req in self.requirements:
+            if req.type == requirement.RequirementType.SCRIPT:
+                layout_soup.body.append(req.to_tag())
+            elif req.type == requirement.RequirementType.STYLE:
+                layout_soup.head.append(req.to_tag())
+
         if hot_reloading:
-            hot_reload_soup = bs4.BeautifulSoup(
-                open(
-                    os.path.join(os.path.dirname(__file__), "hot-reload.html"),
-                    encoding="utf-8",
-                ),
-                "html.parser",
-            )
-            # convert soup to string
-            hot_reload_soup = str(hot_reload_soup)
+            hot_reload_path = os.path.join(os.path.dirname(__file__), "hot-reload.html")
+            with open(hot_reload_path, encoding="utf-8") as f:
+                hot_reload_soup = bs4.BeautifulSoup(f.read(), PARSER)
             # replace localhost:8090 with localhost:port
-            hot_reload_soup = bs4.BeautifulSoup(
-                hot_reload_soup.replace(
-                    "localhost:8090", f"localhost:{self.settings.websockets_port}"
-                ),
-                "html.parser",
+            hot_reload_html = str(hot_reload_soup).replace(
+                "localhost:8090", f"localhost:{self.settings.websockets_port}"
             )
+            hot_reload_soup = bs4.BeautifulSoup(hot_reload_html, PARSER)
             layout_soup.find("body").append(hot_reload_soup)
 
         output_path = os.path.join(
@@ -623,7 +773,7 @@ class Build:
             self.settings.static_path, self.settings.build_path, dirs_exist_ok=True
         )
 
-        # Step 5: For every folder in root-folders, move its' contents to the build directory and delete the folder
+        # Step 5: For every folder in root-folders, move its contents to the build directory and delete the folder
         for folder in self.settings.root_folders:
             shutil_compat.copytree(
                 os.path.join(self.settings.build_path, folder),
@@ -680,6 +830,9 @@ class Build:
                 l for l in self.locales if l != locale
             ]
             self.context["SIBYL_ROOT"] = "/" + locale + "/"
+
+            # Prepare dotdicts once per locale (keeps dynamic semantics but reduces per-eval overhead)
+            self._prepare_context(self.context)
 
             self.debug_path = []
             try:
